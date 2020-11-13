@@ -3,7 +3,7 @@ Started Version 10.29.20
 
 ###Git###
 
-Adding/Updating a File
+***Adding or Updating a File***
 
 git pull
 git add <file>
@@ -13,19 +13,25 @@ git pull --rebase
 git push
 git status
 
-Removing File
+***/Adding or Updating a File***
+
+***Removing File***
 
 git rm <file to remove>
 git commit -m "foo"
 git pull --rebase
 git push
 
-Get Status and Differences
+***/Removing File***
+
+***Get Status and Differences***
 
 git status
 git diff
 
-Create local repository
+***/Get Status and Differences***
+
+***Create local repository***
 
 mkdir /code; cd code/
 ssh -T git@github.com
@@ -36,6 +42,8 @@ git config --global user.email "jquicke@opxdev.com"
 git status
 git pull --rebase
 git push
+
+***/Create local repository***
 
 ***Create new repository on command line***
 
@@ -57,10 +65,7 @@ git push -u origin main
 
 ***/Push existing repository from command line***
 
-
-
 git config --global alias.root 'rev-parse --show-toplevel'   -- create alias to get git root
-
 
 ***Unstage files***
 
