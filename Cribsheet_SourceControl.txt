@@ -24,6 +24,11 @@ git push -u origin main
 
 ***/Push existing repository from command line***
 
+
+
+git config --global alias.root 'rev-parse --show-toplevel'   -- create alias to get git root
+
+
 ***Naming Best Practices***
 
 The Root: The root should be reserved for configuration files, documentation (such as README.md and others). Also, it can contain VS solution files and git files.
