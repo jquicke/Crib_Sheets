@@ -1,0 +1,91 @@
+Version 09.24.13
+Started 07.15.13
+
+###Hardening Operating Systems###
+
+1. Firewall
+
+apt-get install ufw
+ufw enable
+ufw ufw status verbose
+ufw allow ssh http https sftp scp mysql
+
+2. Root and SSH Port
+
+turn off remote login for root user
+create another user so you can login to server as that user and then ‘su’ to root. 
+Change the default ssh port number from 22 to a higher value.
+
+	Open ssh config file.
+	vi /etc/ssh/sshd_config
+	Search for Port & PermitRootLogin directives and change it as below. 
+
+	Port 5468
+		Protocol 2
+		PermitRootLogin no
+
+Restart ssh:
+	/etc/init.d/ssh restart
+	
+3. Harden Network settings in /etc/sysctl:
+	vi /etc/sysctl.conf
+
+	# IP Spoofing protection
+	net.ipv4.conf.all.rp_filter = 1
+	net.ipv4.conf.default.rp_filter = 1
+
+	# Disable source packet routing
+	net.ipv4.conf.all.accept_source_route = 0
+	net.ipv6.conf.all.accept_source_route = 0 
+	net.ipv4.conf.default.accept_source_route = 0
+	net.ipv6.conf.default.accept_source_route = 0
+
+	# Block SYN attacks
+	net.ipv4.tcp_syncookies = 1
+	net.ipv4.tcp_max_syn_backlog = 2048
+	net.ipv4.tcp_synack_retries = 2
+	net.ipv4.tcp_syn_retries = 5
+
+	# Log Martians
+	net.ipv4.conf.all.log_martians = 1
+	net.ipv4.icmp_ignore_bogus_error_responses = 1
+
+	# Ignore ICMP redirects
+	net.ipv4.conf.all.accept_redirects = 0
+	net.ipv6.conf.all.accept_redirects = 0
+	net.ipv4.conf.default.accept_redirects = 0 
+	net.ipv6.conf.default.accept_redirects = 0
+
+Save the file and reload the settings using the following command.
+	sysctl -p
+
+4. Ip Spoofing 
+	vi /etc/host.conf
+	Add the following lines.
+	order bind,hosts
+	nospoof on
+Save the file and restart server
+
+5. Disable DNS recursion if running BIND on server
+vi /etc/bind/named.conf.options
+add or edit the following to Options section.
+
+recursion no;
+
+Restart bind server.
+
+###/Hardening Operating Systems###
+
+###Subnet Masks Slash Subnets###
+
+Prefix size 	Network mask 	Available Subnets 	Usable hosts per subnet 	Total usable hosts
+/24				255.255.255.0			1					254							254
+/25				255.255.255.128			2					126							252
+/26				255.255.255.192			4					62							248
+/27				255.255.255.224			8					30							240
+/28				255.255.255.240			16					14							224
+/29				255.255.255.248			32					6							192
+/30				255.255.255.252			64					2							128
+/31				255.255.255.254			128					2 *							256
+
+###/Subnet Masks Slash Subnets###

@@ -1,0 +1,3303 @@
+Current Version 07.21.20
+Started Version 04.01.05
+
+###Oracle###
+
+***Starting Up***
+
+set lines 132 pages 5000
+create pfile='/home/oracle/init.omprd.sav' from spfile;   -- create text dump of spfile
+
+shutdown abort  -- fix hung server
+startup mount
+recover database
+
+startup nomount	--normal startup
+startup mount
+alter database mount
+alter database open
+
+select * from v$version  -- get Oracle version
+ps -ef | grep smon	-- check instances are up/down 
+ps -ef | grep tns	--check listeners are up/down 
+ps -ef | grep dbs	--check intelligent agent is up/down 
+cd /opt/oracle/product/10.2.0/bin/  -- where sqlplus and such binaries are at
+vi -R /etc/oratab   -- to see what instances are available
+ . oraenv   -- set the oracle env settings
+export EDITOR=vi
+sqlplus / as sysdba   --login
+startup pfile='/u01/app/oracle/admin/PV03/pfile/initPV03.ora' -- specify pfile when starting up
+alter database backup controlfile to trace
+alter system set large_pool_size = 100M scope = spfile;
+alter system set db_cache_size = 1000M scope = spfile;
+create pfile = '/u01/app/oracle/admin/<SID>/pfile/init<SID>.ora' from spfile;
+create SPFILE='/opt/oracle/admin/dev01/pfile/spfile_dev01.ora' from PFILE='/opt/oracle/admin/dev01/scripts/init.ora'
+create pfile='/opt/oracle/admin/dev01/pfile/initDEV01.ora' from spfile;
+
+***/Starting Up***
+
+***SQL PLUS***
+set linesize
+set pagesize
+(inside sqlplus) !stty erase <backspace>
+? is oracle home when running sql plus
+
+***/SQL PLUS***
+
+***Tablespaces***
+select * from dba_tablespaces
+select * from user_tablespaces
+select tablespace_name from dba_tablespaces;
+select tablespace_name from user_tablespaces;
+
+---list tablespaces---
+col file_name format a50
+col tablespace_name format a10
+
+SELECT file_name, tablespace_name, ROUND(bytes/1024000),'MB' FROM dba_data_files ORDER BY file_name
+---/list tablespaces---
+
+***/Tablespaces***
+
+
+***User Management***
+
+SELECT s.username, s.sid, s.serial#, s.osuser, s.program FROM gv$session s  -- finding user processes
+ALTER SYSTEM KILL SESSION '<sid>,<serial#>'; 	--killing user processes
+ALTER SYSTEM KILL SESSION '<sid>,<serial#>' IMMEDIATE; --killing hard to kill user processes
+
+***/User Management***
+
+***Log Recovery Settings***
+
+select log_mode from sys.v$database;   -- find archive log mode
+
+***/Log Recovery Settings***
+
+***Patching***
+read README
+set /var/opt/oracle/oraInst.loc to correct  for version 
+/u01/app/oracle/product/<version>/oraInventory
+get the latest opatch download and put it is each of the 9i oracle homes
+
+unzip
+cd into unzipped directory
+opatch apply
+opatch lsinventory
+
+***/Patching***
+
+select INDEX_NAME from dba_indexes where TABLE_NAME = 'FAMILIES' and 
+uniqueness = 'UNIQUE';
+
+exec dbms_job.run(job#) -- runs a dba job
+exec dbms_job.broken(job#,true) -- stops a dba job
+
+statspack information
+connect as user perfstat
+select broken, what from user_jobs
+
+oerr ora <error number> --looks up oracle error numbers
+
+
+***ASM***
+
+select name, round(total_mb/1024,2) as tot_gb, round((total_mb-free_mb)/1024,2) as inuse_gb, 
+round(free_mb/1024,2) as free_gb, round((free_mb/total_mb)*100,2)  as free_pct
+from v$asm_diskgroup
+order by name;  -- Check ASM Storage Utilization
+
+***/ASM***
+
+---<@tablespaces procedure>---
+SELECT   d.tablespace_name
+        ,(a.bytes/1024/1024) available
+        ,(a.ubytes/1024/1024) actual
+        ,NVL((a.ubytes/1024/1024)-(NVL(f.bytes,0)/1024/1024),0) used
+        ,(a.bytes - a.ubytes + NVL(f.bytes, 0)) / 1048576 free
+        ,((a.ubytes - NVL(f.bytes,0)) / a.bytes * 100) pct_used
+        ,case when ((a.ubytes - NVL(f.bytes,0)) / a.ubytes * 100) > 92.5 
+then '*
+' end flag
+FROM     sys.dba_tablespaces d
+        ,(
+                SELECT   tablespace_name
+                        ,SUM(bytes) ubytes
+                        ,SUM(DECODE(autoextensible,'YES',maxbytes,bytes)) 
+bytes
+                FROM     dba_data_files
+                GROUP BY tablespace_name
+         ) a
+        ,(
+                SELECT   tablespace_name
+                        ,SUM(bytes) bytes
+                FROM     dba_free_space
+                GROUP BY tablespace_name
+         ) f
+WHERE   d.tablespace_name = a.tablespace_name
+AND     d.tablespace_name = f.tablespace_name(+)
+ORDER BY d.tablespace_name
+---</@tablespaces script>---
+
+select username from dba_users;
+
+alter database tempfile '/u01/oradata/HRR3/temp_01.dbf' autoextend on next 
+500M maxsize 8000M;
+
+with RAC databases: if you want to take it out of archive log mode you need 
+to take it out of cluster mode down to one instance
+
+select * from parts.vendor_data_exceptions where rep_timestamp > 
+trunc(sysdate)
+select * from parts.vendor_data_exceptions where rep_timestamp > 
+to_date('03-15-2005:15','mm-dd-yyyy:hh24:mi:ss')
+
+*****Replication*****
+cd to /u01/app/oracle/admin/sql/rep (rep errors live here)
+login to server as repadmin
+@rep_error
+@retry_deferror
+commit after every retry run
+set serveroutput on size 20000
+exec show_call('<deferred tran id>')
+exec show_call('<deferred tran id>',<call number>)
+
+select * from CGI.MEMBERS
+where  group_id =  117104
+and owner_id = 96514
+
+exec show_call('10.43.127732',1)
+exec show_call('9.30.127459')
+--------------------------------------------------------------------------------
+
+exec dbms_reputil.replication_off
+alter trigger CGI.MEMBERS_TRIG disable;
+alter trigger CGI.MEMBER_PRIVILEGES_TRIG disable;
+
+update CGI.MEMBERS set REP_TIMESTAMP = to_date('2002-07-24 
+17:04:19','yyyy-mm-dd hh24:mi:ss') ,REP_SITE='CG04',MEMBER_ID = 836174
+where MEMBER_ID = '47163';
+
+alter trigger CGI.MEMBERS_TRIG enable;
+alter trigger CGI.MEMBER_PRIVILEGES_TRIG enable;
+exec dbms_reputil.replication_on;
+
+--------------------------------------------------------------------------------
+
+exec dbms_reputil.replication_off
+@disable_triggers cgi families
+
+delete from CGI.FAMILIES
+where parent in ( 'motp-jerry-seiner');
+
+--insert into CGI.FAMILIES
+--select * from CGI.FAMILIES@CG04
+--where parent in ('motp-jerry-seiner');
+
+@enable_triggers cgi families
+exec dbms_reputil.replication_on;
+
+--------------------------------------------------------------------------------
+select * from CGI.FAMILIES
+where  parent = 'motp-benchmark-al'
+
+exec show_call('10.43.127732',1)
+exec show_call('9.30.127459')
+--------------------------------------------------------------------------------
+SELECT CLIENTID, COUNT(PAYMENTID) AS PAYMENTS
+FROM JPAY_OWNER.PAYMENT
+WHERE TRANSACTIONDATE >= SYSDATE-1/24		-- get time in hour increments
+AND CLIENTID IN ('STREAMLINE','SL_ECP','TMCOM','TM_ECP','POSR')
+AND AUTHRESPONSECODE !='E'
+AND STATUSCODE='COMPLETE'
+AND RECEIPTDELIVERYDATE IS NOT NULL
+GROUP BY CLIENTID
+ORDER BY CLIENTID ASC
+--------------------------------------------------------------------------------
+--  daily_check01.sql
+--  First of several scripts to be run each morning
+--  checks for:  Invalid objects
+--               Incorrect location of objects
+--               Free space
+--               Over-extension
+--
+set linesize 78
+set pagesize 150
+--
+COL biggest_mb FORMAT 99,999.9
+COL default_tablespace FORMAT a25
+COL file_name FORMAT a45
+COL file_id format 999 heading ID#
+COL free_space FORMAT 99,999.9
+COL member FORMAT a45
+COL min_mb FORMAT 99,999.9
+COL name FORMAT a45
+COL owner FORMAT a13
+COL object_name FORMAT a30
+COL percent_free FORMAT 999.9
+COL temporary_tablespace FORMAT a25
+COL total_mb FORMAT 99,999.9
+COL username FORMAT a15
+--
+Select Sysdate, name from v$database;
+--
+PROMPT
+PROMPT
+PROMPT ------------ Check for invalid objects, by schema
+--
+select count(*) "Invalids", owner
+from dba_objects
+where status ='INVALID'
+group by owner;
+--
+PROMPT
+PROMPT
+PROMPT ------------ Non-SYS tables in SYSTEM tablespace
+--
+ select a.owner,a.object_name, a.created,a.last_ddl_time
+ from dba_objects a
+ where concat(a.owner,a.object_name) =
+ (  select concat(b.owner,b.table_name)
+    from dba_tables b
+    where b.owner <>'SYS'
+    and b.tablespace_name = 'SYSTEM'
+    and b.owner = a.owner
+    and b.table_name = a.object_name);
+--
+PROMPT
+PROMPT
+PROMPT ------------ Users with SYSTEM as their default or temporary tablespace
+--
+SELECT username, temporary_tablespace,default_tablespace
+from dba_users
+where temporary_tablespace = 'SYSTEM'
+or default_tablespace = 'SYSTEM';
+--
+Select 'Check for files in backup mode' " ", count(*) from v$backup
+where status <>'NOT ACTIVE';
+--
+PROMPT
+PROMPT ------------ Users with tables in temporary or rollback tablespaces
+PROMPT
+
+--
+col "Owner and object" for a34
+--SELECT owner|| '  '||object_name "Owner and table", created,
+--  last_ddl_time modified
+--
+SELECT 'tables in wrong tablespaces is: '||count(*) "Owner and object"
+FROM dba_objects
+WHERE object_id IN
+   (SELECT obj#
+   FROM sys.tab$
+   WHERE ts# IN
+       (SELECT ts# FROM sys.ts$
+        WHERE name IN
+          (SELECT tablespace_name xyz
+           FROM dba_rollback_segs
+           WHERE tablespace_name <>'SYSTEM'
+                UNION
+           SELECT temporary_tablespace xyz
+           FROM dba_users
+           WHERE temporary_tablespace <>'SYSTEM')
+        ) );
+--
+--  checks free space
+--
+PROMPT
+PROMPT
+PROMPT ------------ Free space fragmentation (in MBs) by Tablespace
+--
+select tablespace_name, sum(bytes)/1048576 total_mb, 
+max(bytes)/1048576 biggest_mb, min(bytes)/1048576 min_mb,
+count(*) N_Frags
+from dba_free_space 
+group by tablespace_name;
+--
+PROMPT
+PROMPT
+PROMPT ------------ Total and freespace (in MBs) by Tablespace
+--
+SELECT tablespace_name, sum(free_space)/sum(total_mb)*100 percent_free, 
+       sum(free_space) free_space, sum(total_mb) total_mb
+FROM (
+      SELECT tablespace_name, sum(bytes)/1048576 total_mb,
+          '  total' type, to_number('0') free_space
+      FROM dba_data_files
+      GROUP BY tablespace_name
+           UNION
+      SELECT tablespace_name, to_number('0') total_mb,
+          'free' type , sum(bytes)/1048576 free_space
+      FROM dba_free_space
+      GROUP BY tablespace_name)
+GROUP BY tablespace_name
+ORDER BY 2;
+--
+PROMPT
+PROMPT  ------------ Total free space in Database
+PROMPT  
+--
+SELECT SUM(bytes)/1048576 total_mb 
+  FROM dba_free_space;
+--
+--  report total database size
+--
+PROMPT
+PROMPT
+PROMPT  ------------ Free space, less SYSTEM, Temp, and RBS tablespaces
+--
+SELECT SUM(bytes)/1048576 total_mb FROM dba_free_space
+WHERE tablespace_name NOT IN
+   (SELECT temporary_tablespace xyz FROM dba_users
+    UNION 
+    SELECT tablespace_name xyz FROM dba_rollback_segs);
+--
+PROMPT
+PROMPT
+PROMPT  ------------ Check Total database space
+--
+SELECT SUM(bytes)/1048576 total_mb 
+  FROM dba_data_files;
+--
+PROMPT
+PROMPT
+PROMPT  ------------ List data, control, and redo file information
+PROMPT  -            files
+--
+SELECT file_id,file_name,bytes,status,tablespace_name 
+FROM dba_data_files 
+ORDER BY tablespace_name;
+--
+PROMPT -             control files
+--
+SELECT * FROM v$controlfile;
+--
+PROMPT -             redo logs
+SELECT * from v$logfile;
+-- 
+PROMPT
+PROMPT
+PROMPT  ------------ list RBS information
+--
+SELECT * FROM dba_rollback_segs; 
+--
+-- get table(s) whose next extent is greater than its tablespaces
+-- max-free-space
+--
+PROMPT
+PROMPT
+PROMPT  ------------ Tables whose next extent will be greater than max free space
+--
+SELECT tablespace_name, table_name, initial_extent, next_extent
+  FROM sys.dba_tables A
+  WHERE NEXT_EXTENT >
+     (SELECT MAX(BYTES)
+      FROM SYS.DBA_FREE_SPACE B
+      WHERE B.TABLESPACE_NAME = A.TABLESPACE_NAME);
+--
+-- get index(es) whose next extent is greater than its tablespaces
+-- max-free-space
+--
+PROMPT
+PROMPT
+PROMPT  ------------ Indexes whose next extent will over-extend available space
+--
+SELECT TABLESPACE_NAME,INDEX_NAME, INITIAL_EXTENT, NEXT_EXTENT FROM
+SYS.DBA_INDEXES A
+WHERE NEXT_EXTENT >
+(SELECT MAX(BYTES)
+  FROM SYS.DBA_FREE_SPACE B
+WHERE B.TABLESPACE_NAME = A.TABLESPACE_NAME);
+--
+--  get all index information about any index that will over-extend
+--
+PROMPT
+PROMPT
+PROMPT  ------------ Index segment info from dba_indexes for over-extenders
+--
+SELECT  A.* 
+FROM    DBA_INDEXES  A 
+WHERE A.NEXT_EXTENT > 
+(SELECT MAX(B.BYTES) 
+FROM    DBA_FREE_SPACE  B 
+WHERE A.TABLESPACE_NAME=B.TABLESPACE_NAME);
+--
+--  check tables with percent-increase greater than zero to
+--  see if they will over-extend
+--
+PROMPT
+PROMPT
+PROMPT  ------------ Check tables with PCTINCREASE > 0 for over_extension
+--
+SELECT  A.* 
+FROM    DBA_SEGMENTS  A, 
+DBA_TABLES  C 
+WHERE A.SEGMENT_NAME=C.TABLE_NAME 
+AND C.PCT_INCREASE > 0 
+AND  ((A.BYTES * C.PCT_INCREASE ) / 100) > 
+(SELECT MAX(B.BYTES) 
+FROM     DBA_FREE_SPACE  B 
+WHERE  A.TABLESPACE_NAME=B.TABLESPACE_NAME) ;
+--
+--  check indexes with percent-increase greater than zero to
+--  see if they will over-extend
+--
+PROMPT
+PROMPT
+PROMPT  ------------ Check indexes with PCTINCREASE > 0 for over_extension
+--
+SELECT  A.* 
+FROM    DBA_SEGMENTS  A, 
+DBA_INDEXES  C 
+WHERE A.SEGMENT_NAME=C.INDEX_NAME 
+AND C.PCT_INCREASE > 0 
+AND  ((A.BYTES * C.PCT_INCREASE ) / 100) > 
+(SELECT MAX(B.BYTES) 
+FROM     DBA_FREE_SPACE  B 
+WHERE  A.TABLESPACE_NAME=B.TABLESPACE_NAME);
+--
+--  get all table information about any table that will over-extend
+--
+PROMPT
+PROMPT
+PROMPT ------------ All table info from dba_tables for over extenders
+--
+SELECT  A.* 
+FROM    DBA_TABLES  A 
+WHERE A.NEXT_EXTENT > 
+(SELECT MAX(B.BYTES) 
+FROM    DBA_FREE_SPACE  B 
+WHERE A.TABLESPACE_NAME=B.TABLESPACE_NAME);
+--
+--  get segments that are about to reach their max extents
+--
+PROMPT
+PROMPT
+PROMPT  ------------ Tables, indexes, etc within 50 of max extents
+--
+SELECT owner, segment_type, segment_name,
+max_extents, extents, max_extents - extents
+FROM dba_segments
+WHERE max_extents - extents <50
+AND   owner <> 'SYS'
+AND   segment_type = 'CACHE'
+ORDER BY 1,2,3;
+--------------------------------------------------------------------------------
+#!/bin/sh
+# Generic Oracle Backup Script
+# Script to perform full backup of geo database
+# Run as os user oracle
+# To change location of datafile backups simply modify the forma
+
+export ORACLE_SID=geo
+export ORAENV_ASK=NO
+. /usr/local/bin/oraenv
+
+$ORACLE_HOME/bin/rman << END
+connect target /
+run {
+ allocate channel d1 type disk format '/backup/geo/%U';
+ backup database plus archivelog;
+}
+END
+-------------------------------------------------------------------------------
+###/ORACLE###
+
+###SYBASE###
+
+look in /etc/system for kernel parameters for memory
+---etc/system---
+set shmsys:shminfo_shmmax = 536870912 <512 megs>
+set shmsys:shminfo_shmseg = 10
+---/etc/system---
+put error logs in partition where they can grow in size
+separate data and logs on different devices
+
+select cargo_id, dest_id from routing t1   -- finding duplicate values
+	where ( select count(*) from routing t2 
+		where t2.dest_id = t1.dest_id ) > 1
+		
+###/SYBASE###
+
+###MySQL###
+
+update mysql.user set password = PASSWORD('Openm@rk3t') where user = 'spanatula' --update or change password
+for name in `ls *.sql`; do sed s/ENGINE=MyISAM/ENGINE=InnoDB/ $name > $name.new ; mv $name.new $name ; done		--change engine type in create ddl
+SET GLOBAL SQL_SLAVE_SKIP_COUNTER = 1
+insert into mysql.user values ('%','trans_r',password('password-you-want'),'Y','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','','','','','0','0','0','0'); -- add row to mysql.user table
+explain extended select 1 from dual  -- more on explain plan which shows query
+for i in `ls` ; do echo "load data infile '$i' into table bfg_auth_scrubbed.$i" >> run_load.sql; done  --shell script load data infile
+time mysql -uroot -e "use warehouse;LOAD DATA INFILE '/backup/warehouse/xac' INTO TABLE tMessageWarehouse FIELDS TERMINATED BY '\t';" &  --command line load data infile
+load data infile 'log_gameDownloads.txt' into table bfg_downloadLog.log_gameDownloads -- need to have tab file in correct data directory for that db
+PURGE MASTER LOGS TO '<mysql.bin.log.file>'   -- delete binary logs | truncate bin logs
+PURGE MASTER LOGS BEFORE '<date.time>'
+desc <table name>
+select database()
+show databases
+select user()
+select current_user()
+select * from mysql.user  -- gives all users on instance
+select now()
+select version(),current_date();
+use <database>
+create database <db_name>
+show tables
+select count(*) from <table_name>
+show VARIABLES
+show indexes from <table_name>
+BENCHMARK(loop_count,expression) example: SELECT BENCHMARK(100000000,1+1); 
+mysql.server stop start
+mysqladmin shutdown -uroot -p
+EXPLAIN select count(*) from foo.bar
+load index into cache
+show warnings
+show errors
+show open tables from <dbname> where In_use > 0
+show procedure status
+show processlist
+show full processlist
+show create table <table_name>
+show create procedure <proc_name>
+show table status -- checks engine checks rows (only accurate for myisam) checks space
+
+-- find duplicate rows with join ot duplicates with join
+select distinct(a.user_store_id) 
+from user_store a 
+join user_store b on a.user_id = b.user_id 
+where a.user_store_id != b.user_store_id 
+and a.store_id = b.store_id 
+and a.user_id = b.user_id;
+
+***MySQL Variables***
+
+-- scope is local so you need to keep the variable within a BEGIN…END block
+mysql> set @foo = now();
+mysql> select @foo;
+-- to set many values in one line use the “:=” operator
+mysql> set @foo := now(), @bar := now();
+mysql> select @foo, @bar;
+
+SET GLOBAL TRANSACTION ISOLATION LEVEL READ COMMITTED;
+SET GLOBAL SQL_MODE = "TRADITIONAL,NO_ENGINE_SUBSTITUTION";
+
+***/MySQL Variables***
+
+***Isolation Levels***
+
+select @@tx_isolation
+select @@global.tx_isolation
+
+default transaction level is repeatable read
+change in my.cnf transaction_level=read_uncommitted
+(or)
+set transaction isolation level read uncommitted
+     --set w/o parameter for only this transaction
+(or)
+set session transaction isolation level read uncommitted
+    --set session for session until disconnected
+(or)
+set global transaction isolation level read uncommitted
+     --set global for all transaction but not this one
+
+***MySQL Query Cache***
+
+select sql_cache * from foo.bar
+select sql_no_cache * from foo.bar  -- don't cache result set   (good for count * during loads)
+query cache value 0 don't cache ever
+query cache value 1 cache all but explicit sql_no_cache
+query cache value 2 cache on demand
+--myisam uses key cache so set this up
+
+***MySQL Build From Source Code***
+
+groupadd mysql
+useradd -g mysql mysql
+gunzip < mysql-<version>.tar.gz | tar -xvf -
+cd mysql-<version>
+./configure --prefix=/usr/local/mysql
+make
+make install
+cp support-files/my-medium.cnf /etc/my.cnf
+cd /usr/local/mysql
+bin/mysql_install_db --user=mysql
+chown -R root  .
+chown -R mysql var
+chgrp -R mysql .
+/usr/local/mysql/bin/mysqld_safe --user=mysql &
+
+***/MySQL Build From Source Code***
+
+***MySQL Security*** 
+update mysql.user set password = password('strong-password')
+where user = 'root';
+flush privileges;
+***/MySQL Security***
+
+***MySQL Replication***
+
+GRANT REPLICATION SLAVE ON *.* TO 'repl'@'%' IDENTIFIED BY 'slavepass';
+
+#skip-slave-start   -- put this in my.cnf & use when rebuilding replication
+
+flush tables with read lock
+--Resync the master database server
+mysql> stop slave;
+mysql> change master to master_host='10.50.16.12', master_user='repl', master_password='r3pl', master_log_file='mysql-bin.000011', master_log_pos=261011691;
+mysql> start slave;
+mysql> show slave status\G
+--/Resync the master database server
+
+***MySQL Client Tools***
+
+mysqldump -uroot --tab=path --tables cingular_ens warehouse > /backup/warehouse
+mysqldump --single-transaction --skip-extended-insert -O net_buffer_length=64k --databases bfg_downloadLog > /data/db_backups/bfg_downloadLog.sql   --dump database and skip (remember to check/set buffer size correctly first)
+mysqldump --single-transaction -O net_buffer_length=64k --databases bfg_downloadLog > /tmp/bfg_downloadLog.sql
+mysqldump --single-transaction -O net_buffer_length=64k --tab=/tmp bfg_downloadLog
+
+-- daily mysql dump with cleanup
+#!/bin/bash
+
+/usr/bin/mysqldump -uroot --single-transaction --all-databases > /db_backup/wiki_mysql_backup_`date +%m%d%y`.sql
+/usr/bin/find /db_backup/ -mtime -1 -exec echo {} \;
+/usr/bin/find /db_backup/ -mtime +7 -exec /bin/rm {} \;
+-- /daily mysql dump with cleanup
+
+mysqlimport -uroot bfg_downloadLog log_gameDownloads.txt
+mysqldump -uroot --master-data=1 --all-databases > database_backup.sql -- get backup ready for replication
+time mysqldump --opt -uroot warehouse cingular_transaction > ./cingular_transaction.sql &  -- dump table or specific tables
+myisamchk --force --update-state --key_buffer_size=10240M --sort_buffer_size=2048M --read_buffer_size=128k --write_buffer_size=128M /export/data/db_data/warehouse/*.MYI  --force the indexes ignoring errors
+myisamchk --keys-used=0 --key_buffer_size=14366M --sort_buffer_size=14366M --read_buffer_size=8k --write_buffer_size=8M -rq /export/data/db_data/warehouse/*.MYI  --remove indexes
+myisamchk --key_buffer_size=14366M --sort_buffer_size=14366M --read_buffer_size=8k --write_buffer_size=8M -rq /export/data/db_data/subreport/*.MYI  --rebuild indexes from table create statement after indexes are removed
+
+
+***/MySQL Client Tools***
+
+***MySQL Tuning***
+
+never do a group by on non indexed column
+if you don't use an autoincrement you will lock out selects every time you do an insert
+INET_ATON() and INET_NTOA() for IP Addess to int conversion
+execution plans are not cached...query cache holds exact results
+
+***/MySQL Tuning***
+
+***MySQL Insert Rate***
+
+--one line
+set @a=(select count(*) from warehouse.tMessageWarehouse);select sleep(10);set @b=(select count(*) from warehouse.tMessageWarehouse);set @c=((@b - @a)/10);select @c as rows_per_second;
+
+--script form 
+set @a=(select count(*) from warehouse.tMessageWarehouse);
+select sleep(10);
+set @b=(select count(*) from warehouse.tMessageWarehouse);
+set @c=((@b - @a)/10);
+select @c as rows_per_second;
+
+***/MySQL Database Rate***
+
+***MySQL Table and Sizes Engine Types***
+
+SELECT TABLE_SCHEMA, ENGINE, COUNT(*) AS count_tables,   
+SUM(((DATA_LENGTH/1024)/1024)+((INDEX_LENGTH/1024)/1024)) AS size, 
+SUM(((INDEX_LENGTH)/1024)/1024) AS index_size 
+FROM INFORMATION_SCHEMA.TABLES 
+WHERE TABLE_SCHEMA NOT IN ('mysql', 'INFORMATION_SCHEMA')
+AND ENGINE IS NOT NULL GROUP BY TABLE_SCHEMA, ENGINE;
+***/MySQL Table Sizes and Engine Types***
+
+***MySQL Backup Script I***
+
+#!/bin/sh
+
+SCHEMA=$1
+BACKUP_DIR=/mnt/db_backup/${SCHEMA}
+DAY_OF_MONTH=`date +%d`
+DAY_OF_WEEK=`date +%w`
+BACKUP_NAME=${SCHEMA}-BACKUP-`date +%Y%m%d%H%M%S`
+NOTIFY_ADDRESS=james.quicke@bigfishgames.com
+KEEP_DAILY=12
+KEEP_WEEKLY=12
+KEEP_MONTHLY=12
+
+{
+echo -n "starting backup of ${SCHEMA} at "
+date
+if [ ! -d ${BACKUP_DIR} ]; then
+    mkdir ${BACKUP_DIR}
+fi
+
+if [ ! -d ${BACKUP_DIR}/daily ]; then
+    mkdir ${BACKUP_DIR}/daily
+fi
+
+if [ ! -d ${BACKUP_DIR}/weekly ]; then
+    mkdir ${BACKUP_DIR}/weekly
+fi
+
+if [ ! -d ${BACKUP_DIR}/monthly ]; then
+    mkdir ${BACKUP_DIR}/monthly
+fi
+
+if [ ${DAY_OF_MONTH} = "01" ]; then
+    FULL_BACKUP_NAME=${BACKUP_DIR}/monthly/${BACKUP_NAME}.sql.gz
+elif [ ${DAY_OF_WEEK} = "0" ]; then
+    FULL_BACKUP_NAME=${BACKUP_DIR}/weekly/${BACKUP_NAME}.sql.gz
+else
+    FULL_BACKUP_NAME=${BACKUP_DIR}/daily/${BACKUP_NAME}.sql.gz
+fi
+echo "backup file will be ${FULL_BACKUP_NAME}"
+mysqldump -uroot --routines ${SCHEMA} | gzip > ${FULL_BACKUP_NAME}
+echo "backup file created"
+ls -l ${FULL_BACKUP_NAME}
+echo "pruning daily backup directory"
+cd ${BACKUP_DIR}/daily
+for f in `ls -t | tail -n +${KEEP_DAILY}`
+do
+  rm ${f}
+done
+echo "pruning weekly backup directory"
+cd ${BACKUP_DIR}/weekly
+for f in `ls -t | tail -n +${KEEP_WEEKLY}`
+do
+  rm ${f}
+done
+echo "pruning monthly backup directory"
+cd ${BACKUP_DIR}/monthly
+for f in `ls -t | tail -n +${KEEP_MONTHLY}`
+do
+  rm ${f}
+done
+
+echo "DAILY BACKUP FILES:"
+ls -lt ${BACKUP_DIR}/daily
+echo 
+echo
+echo "WEEKLY BACKUP FILES:"
+ls -lt ${BACKUP_DIR}/weekly
+echo 
+echo
+echo "MONTHLY BACKUP FILES:"
+ls -lt ${BACKUP_DIR}/monthly
+echo
+echo 
+echo -n "backup finished at "
+date
+
+} | mailx -s "DB backup report: ${SCHEMA}" ${NOTIFY_ADDRESS}
+
+***/MySQL Backup Script I***
+
+***MySQL Backup Script II***
+
+#!/usr/bin/zsh
+
+echo -n "Starting Backup at "
+date +"%F %H:%M:%S"
+
+DB_USER=root
+DB_PASSWORD=ddroot
+REPLICATION_USER=repl
+REPLICATION_PASSWORD=r3pl
+
+DB_HOST=localhost
+BACKUP_DIRECTORY=/mnt/database/backup
+SCHEMAS="bigfishgames"
+
+MYSQLDUMP=/usr/bin/mysqldump
+MYSQL=/usr/bin/mysql
+
+DATE=`date +%F_%H%M%S`
+LOCAL_IP=`ifconfig | grep "inet addr" | grep -v "127.0.0.1" | awk '{print $2}' | awk -F ':' '{print $2}'`
+
+coproc ${MYSQL} -h${DB_HOST} -u${DB_USER} -p${DB_PASSWORD}
+
+TOP_DIRECTORY=${BACKUP_DIRECTORY}/${DATE}
+mkdir -p ${TOP_DIRECTORY}
+chown mysql ${TOP_DIRECTORY}
+
+echo "STOP SLAVE;" | ${MYSQL} -h${DB_HOST} -u${DB_USER} -p${DB_PASSWORD}
+echo "SHOW SLAVE STATUS\G" | ${MYSQL} -h${DB_HOST} -u${DB_USER} -p${DB_PASSWORD} > ${TOP_DIRECTORY}/slave.info
+
+print -p "FLUSH TABLES WITH READ LOCK;"
+echo "SHOW MASTER STATUS\G" | ${MYSQL} -h${DB_HOST} -u${DB_USER} -p${DB_PASSWORD} > ${TOP_DIRECTORY}/master.info
+
+RESTORE_SQL=${TOP_DIRECTORY}/restore.sql
+RESTORE_SLAVE_SQL=${TOP_DIRECTORY}/restore_slave.sql
+CREATE_SLAVE_SQL=${TOP_DIRECTORY}/create_slave.sql
+
+echo "SET SQL_BIN_LOG = 0;" >> ${RESTORE_SQL}
+echo "SLAVE_STOP;" >> ${RESTORE_SQL}
+echo "SET AUTOCOMMIT = 0;" >> ${RESTORE_SQL}
+echo "SET FOREIGN_KEY_CHECKS = 0;" >> ${RESTORE_SQL}
+
+for SCHEMA in ${SCHEMAS}
+do
+  DIR=${TOP_DIRECTORY}/${SCHEMA}
+  mkdir -p ${DIR}/data
+  mkdir -p ${DIR}/procedures
+  chown mysql ${DIR}
+
+  echo "backing up ${SCHEMA}"
+  for TABLE in `echo "SHOW TABLES\G" | ${MYSQL} -h${DB_HOST} -u${DB_USER} -p${DB_PASSWORD} ${SCHEMA} | grep '^Tables' | awk '{print $2}'`
+  do
+    echo -n "${TABLE}  "
+    ${MYSQLDUMP} --opt --no-data -h${DB_HOST} -u${DB_USER} -p${DB_PASSWORD} ${SCHEMA} ${TABLE} > ${DIR}/${TABLE}.sql
+    ${MYSQLDUMP} --opt --no-create-info -h${DB_HOST} -u${DB_USER} -p${DB_PASSWORD} ${SCHEMA} ${TABLE} > ${DIR}/data/${TABLE}.sql
+  done
+
+  echo ""
+  echo "backing up stored procedures and user defined functions"
+  ${MYSQLDUMP} --no-data --no-create-info --routines -h${DB_HOST} -u${DB_USER} -p${DB_PASSWORD} ${SCHEMA} > ${DIR}/procedures/procedures.sql
+
+  echo "CREATE DATABASE IF NOT EXISTS ${SCHEMA};" >> ${RESTORE_SQL}
+  echo "USE ${SCHEMA};" >> ${RESTORE_SQL}
+  
+  echo "--" >> ${RESTORE_SQL}
+  echo "-- restoring tables" >> ${RESTORE_SQL}
+  for f in ${DIR}/*.sql
+  do
+    echo "source ${f}" >> ${RESTORE_SQL}
+  done
+
+  echo "--" >> ${RESTORE_SQL}
+  echo "-- restoring stored procedures and user defined functions" >> ${RESTORE_SQL}
+  echo "source ${DIR}/procedures/procedures.sql" >> ${RESTORE_SQL}
+
+  echo "--" >> ${RESTORE_SQL}
+  echo "-- restoring data" >> ${RESTORE_SQL}
+  for f in ${DIR}/data/*.sql
+  do
+    echo "source ${f}" >> ${RESTORE_SQL}
+  done
+  echo ""
+done
+
+echo "SET FOREIGN_KEY_CHECKS = 1;" >> ${RESTORE_SQL}
+echo "COMMIT;" >> ${RESTORE_SQL}
+echo "SET AUTOCOMMIT = 1;" >> ${RESTORE_SQL}
+echo "SET SQL_BIN_LOG = 1;" >> ${RESTORE_SQL}
+
+cat ${RESTORE_SQL} > ${CREATE_SLAVE_SQL}
+cat ${RESTORE_SQL} > ${RESTORE_SLAVE_SQL}
+
+MASTER_HOST=`grep Master_Host ${TOP_DIRECTORY}/slave.info | awk -F ': ' '{print $2}'`
+MASTER_LOG_FILE=`grep Relay_Master_Log_File ${TOP_DIRECTORY}/slave.info | awk -F ': ' '{print $2}'`
+MASTER_LOG_POS=`grep Exec_Master_Log_Pos ${TOP_DIRECTORY}/slave.info | awk -F ': ' '{print $2}'`
+  
+echo "CHANGE MASTER TO MASTER_HOST='${MASTER_HOST}', MASTER_PORT=3306, MASTER_USER='${REPLICATION_USER}', MASTER_PASSWORD='${REPLICATION_PASSWORD}', MASTER_LOG_FILE='${MASTER_LOG_FILE}', MASTER_LOG_POS=${MASTER_LOG_POS};" >> ${RESTORE_SLAVE_SQL}
+echo "SLAVE START;" >> ${RESTORE_SLAVE_SQL}
+
+MASTER_LOG_FILE=`grep File ${TOP_DIRECTORY}/master.info | awk -F ': ' '{print $2}'`
+MASTER_LOG_POS=`grep Position ${TOP_DIRECTORY}/master.info | awk -F ': ' '{print $2}'`
+  
+echo "CHANGE MASTER TO MASTER_HOST='${LOCAL_IP}', MASTER_PORT=3306, MASTER_USER='${REPLICATION_USER}', MASTER_PASSWORD='${REPLICATION_PASSWORD}', MASTER_LOG_FILE='${MASTER_LOG_FILE}', MASTER_LOG_POS=${MASTER_LOG_POS};" >> ${CREATE_SLAVE_SQL}
+echo "SLAVE START;" >> ${CREATE_SLAVE_SQL}
+
+print -p "UNLOCK TABLES;"
+
+echo "START SLAVE;" | ${MYSQL} -h${DB_HOST} -u${DB_USER} -p${DB_PASSWORD}
+
+cat <<EOF > ${TOP_DIRECTORY}/README
+Inside here you will find the files necessary to restore a database server. 
+
+Each directory represents a schema.
+Inside the directory you will find the table definitions as 
+'TABLENAME.sql'.
+
+The table data is in 'data/TABLENAME.sql'.
+
+User defined functions and stored procedures are defined in 
+'procedures/procedures.sql'.
+
+You have 4 basic restoration options...
+
+1) Restore the database server exactly as it was, i.e. as a slave. This
+will recreate all schemas, populate them with data, and execute the
+"CHANGE MASTER" command to point it at the correct master database and
+binary log position. The SQL necessary for this is in restore_slave.sql.
+
+2) Create a slave of this database server using create_slave.sql. This
+is approriate if you want to start up a new slave of this server (without
+interrupting any other slaves).
+
+3) Restore the schemas as a snapshot. Use restore.sql. This will supply
+you with a point in time snapshot of all data.
+
+4) Pick and choose exactly what you want and manually load.
+
+EOF
+
+echo ""
+echo "Compressing backup"
+tar czf ${TOP_DIRECTORY}.tgz ${TOP_DIRECTORY}
+echo "Removing uncompressed backup"
+#rm -rf ${TOP_DIRECTORY}
+echo -n "Finished Backup at "
+date +"%F %H:%M:%S"
+
+***/MySQL Backup Script II***
+
+***MySQL Schema Grabber Script***
+
+#!/bin/sh
+
+MYSQL_USER="nagios"
+MYSQL_PASS="n4g10s"
+MYSQL="/usr/bin/mysql -u$MYSQL_USER -p$MYSQL_PASS"
+MYSQLDUMP="/usr/bin/mysqldump  -u$MYSQL_USER -p$MYSQL_PASS"
+GREP=/bin/grep
+TAIL=/usr/bin/tail
+
+for h in `cat ./mysql_hosts.list`
+do
+ if [ ! -d ${h} ]
+     then
+     mkdir ${h}
+ fi
+
+ echo "starting ${h}"
+
+ $MYSQLDUMP -c -h ${h} mysql > ${h}/mysql.sql
+
+ echo "SHOW DATABASES;" | $MYSQL -h ${h} | $GREP -v ^\mysql$ | $TAIL
+-n +2 > ${h}/schema.list
+
+ for d in `cat ${h}/schema.list`
+   do
+   echo "    dumping schema ${d}"
+   $MYSQLDUMP -d --routines -h ${h} ${d} > ${h}/${d}.schema.sql
+ done
+
+ echo "finished ${h}"
+
+done
+
+***/MySQL Schema Grabber Script***
+
+***MySQL Check MySQL Activity Script***
+
+#!/bin/sh
+
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+STATE_DEPENDENT=4
+isqlpath='/usr/bin'
+warn=30
+crit=60
+null="NULL"
+usage1="Usage: $0 -D ODBC-DSN -u user -p password [-w <warn connections>] [-c <crit connections>]"
+usage2="                                          [-W <warn running>] [-C <crit running>]"
+
+exitstatus=$STATE_WARNING #default
+while test -n "$1"; do
+    case "$1" in
+        -c)
+            critconns=$2
+            shift
+            ;;
+        -w)
+            warnconns=$2
+            shift
+            ;;
+        -C)
+            critrun=$2
+            shift
+            ;;
+        -W)
+            warnrun=$2
+            shift
+            ;;
+        -u)
+            user=$2
+            shift
+            ;;
+        -p)
+            pass=$2
+            shift
+            ;;
+        -h)
+            echo $usage1;
+            echo $usage2;
+            exit $STATE_UNKNOWN
+	    ;;
+	-D)
+            dsn=$2
+            shift
+            ;;
+        *)
+            echo "Unknown argument: $1"
+            echo $usage1;
+            echo $usage2;
+            exit $STATE_UNKNOWN
+            ;;
+    esac
+    shift
+done
+
+CONNECTED=`echo "exec sp_who2" | $isqlpath/isql -b $dsn "$user" $pass | grep -v "+---" | awk -F "|" '{print $3}' | grep -v ^$ | wc -l`
+RUNNING=`echo "exec sp_who2" | $isqlpath/isql -b $dsn "$user" $pass | grep -v "+---" | awk -F "|" '{print $3}' | grep -v ^$ | grep -i "runnable" | wc -l`
+
+STATE=0
+
+if [ $((CONNECTED)) -ge $((critconns)) ]; then 
+    STATE=$STATE_CRITICAL;
+elif [ $((CONNECTED)) -ge $((warnconns)) ]; then 
+    STATE=$STATE_WARNING;
+fi
+
+if [ $((RUNNING)) -ge $((critrun)) ] && [ $STATE -lt 2 ]; then 
+    STATE=$STATE_CRITICAL;
+elif [ $((RUNNING)) -ge $((warnrun)) ] && [ $STATE -lt 1 ]; then 
+    STATE=$STATE_WARNING;
+fi
+
+if [ $STATE -eq 0 ]; then
+    echo "OK: Connected=$CONNECTED (warn=$warnconns, crit=$critconns), Running=$RUNNING (warn=$warnrun, crit=$critrun)"
+elif [ $STATE -eq 1 ]; then
+    echo "WARNING: Connected=$CONNECTED (warn=$warnconns, crit=$critconns), Running=$RUNNING (warn=$warnrun, crit=$critrun)"
+elif [ $STATE -eq 2 ]; then
+    echo "CRITICAL: Connected=$CONNECTED (warn=$warnconns, crit=$critconns), Running=$RUNNING (warn=$warnrun, crit=$critrun)"
+elif [ $STATE -eq 3 ]; then
+    echo "UNKNOWN: Connected=$CONNECTED (warn=$warnconns, crit=$critconns), Running=$RUNNING (warn=$warnrun, crit=$critrun)"
+fi
+
+exit $STATE
+
+***/MySQL Check MySQL Activity Script***
+
+***MySQL Index script***
+--SQL script to grab the worst performing indexes in the whole server
+SELECT
+  t.TABLE_SCHEMA AS `db`
+ , t.TABLE_NAME AS `table`
+ , s.INDEX_NAME AS `inde name`
+ , s.COLUMN_NAME AS `field name`
+ , s.SEQ_IN_INDEX `seq in index`
+ , s2.max_columns AS `# cols`
+ , s.CARDINALITY AS `card`
+ , t.TABLE_ROWS AS `est rows`
+ , ROUND(((s.CARDINALITY / IFNULL(t.TABLE_ROWS, 0.01)) * 100), 2) AS `sel %`
+FROM INFORMATION_SCHEMA.STATISTICS s
+ INNER JOIN INFORMATION_SCHEMA.TABLES t
+  ON s.TABLE_SCHEMA = t.TABLE_SCHEMA
+  AND s.TABLE_NAME = t.TABLE_NAME
+ INNER JOIN (
+  SELECT 
+     TABLE_SCHEMA
+   , TABLE_NAME
+   , INDEX_NAME
+   , MAX(SEQ_IN_INDEX) AS max_columns
+  FROM INFORMATION_SCHEMA.STATISTICS
+  WHERE TABLE_SCHEMA != 'mysql'
+  GROUP BY TABLE_SCHEMA, TABLE_NAME, INDEX_NAME
+ ) AS s2
+ ON s.TABLE_SCHEMA = s2.TABLE_SCHEMA
+ AND s.TABLE_NAME = s2.TABLE_NAME
+ AND s.INDEX_NAME = s2.INDEX_NAME
+WHERE t.TABLE_SCHEMA != 'mysql'                         /* Filter out the mysql system DB */
+AND t.TABLE_ROWS > 10                                   /* Only tables with some rows */
+AND s.CARDINALITY IS NOT NULL                           /* Need at least one non-NULL value in the field */
+AND (s.CARDINALITY / IFNULL(t.TABLE_ROWS, 0.01)) < 1.00 /* Selectivity < 1.0 b/c unique indexes are perfect anyway */
+ORDER BY `sel %`, s.TABLE_SCHEMA, s.TABLE_NAME          /* Switch to `sel %` DESC for best non-unique indexes */
+LIMIT 10;
+***/MySQL Index script***
+
+***MySQL Check Replication***
+
+#! /bin/sh
+
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+STATE_DEPENDENT=4
+mysqlpath='/usr/bin'
+warn=30
+crit=60
+null="NULL"
+usage1="Usage: $0 -H <host> -u user -p password [-w <warn>] [-c <crit>]"
+usage2="<warn> is lag time, in seconds, to warn at.  Default is 30."
+usage3="<crit> is lag time, in seconds, to be critical at.  Default is 60."
+
+exitstatus=$STATE_WARNING #default
+while test -n "$1"; do
+    case "$1" in
+        -c)
+            crit=$2
+            shift
+            ;;
+        -w)
+            warn=$2
+            shift
+            ;;
+        -u)
+            user=$2
+            shift
+            ;;
+        -p)
+            pass=$2
+            shift
+            ;;
+        -h)
+            echo $usage1;
+	    echo 
+            echo $usage2;
+            echo $usage3;
+            exit $STATE_UNKNOWN
+	    ;;
+	-H)
+            host=$2
+            shift
+            ;;
+        *)
+            echo "Unknown argument: $1"
+            echo $usage1;
+	    echo 
+            echo $usage2;
+            echo $usage3;
+            exit $STATE_UNKNOWN
+            ;;
+    esac
+    shift
+done
+
+seconds=`$mysqlpath/mysql -u $user -p$pass -h $host -e 'show slave status\G' | /bin/grep Seconds_Behind_Master | /usr/bin/cut -f2 -d:`
+
+echo $host is $seconds seconds behind
+
+# on the number line, we need to test 6 cases:
+# 0-----w-----c----->
+# 0, 0<lag<w, w, w<lag<c, c, c<lag
+# which we simplify to 
+# lag>=c, w<=lag<c, 0<=lag<warn
+
+# if null, critical
+if [ $seconds == $null ]; then 
+exit $STATE_CRITICAL;
+fi
+
+#w<=lag<c
+if [ $seconds -lt $crit ]; then 
+if [ $seconds -ge $warn ]; then 
+exit $STATE_WARNING;
+fi
+fi
+
+if [ $seconds -ge $crit ]; then 
+exit $STATE_CRITICAL;
+fi
+
+# 0<=lag<warn
+if [ $seconds -lt $warn ]; then 
+exit $STATE_OK;
+fi
+
+***/MySQL Check Replication***
+
+***MySQL Check Innodb Status***
+
+#!/bin/bash
+# check_mysql_innodb
+
+PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
+PROGNAME=`basename $0`
+PROGPATH=`echo $0 | sed -e 's,[\\/][^\\/][^\\/]*$,,'`
+REVISION=`echo '$Revision: 1.2 $' | sed -e 's/[^0-9.]//g'`
+
+DEFAULT_MYSQLHOST=localhost
+DEFAULT_USER=nagios
+DEFAULT_PASSWORD=nagios
+# units are kb
+DEFAULT_WARNING=10000
+DEFAULT_CRITICAL=1000
+
+OK=0
+WARNING=1
+CRITICAL=2
+UNKNOWN=3
+
+## helper variable
+DBLISTFILE=`mktemp`
+TMPFILE=`mktemp`
+RESULTFILE=`mktemp`
+
+print_usage() {
+	echo "Usage: $PROGNAME -h hostname -u user -p password"
+	echo "Options:"
+	echo "-H STRING hostname [Default: $DEFAULT_MYSQLHOST]"
+	echo "-u STRING mysql user [Default: $DEFAULT_USER]"
+	echo "-p STRING mysql users password [Default: $DEFAULT_PASSWORD]"
+	echo "-w INT warning threshold [Default: $DEFAULT_WARNING]"
+        echo "-c INT critical threshold [Default: $DEFAULT_CRITICAL]"
+}
+
+print_help() {
+        echo $PROGNAME $REVISION
+        echo ""
+        print_usage
+        echo "Will check free space of innodbs."
+        echo ""
+        echo "contact info@dass-it.de for further information"
+        exit $UNKNOWN
+}
+
+cleanup() {
+rm -f $DBLISTFILE
+rm -f $TMPFILE
+rm -f $RESULTFILE
+}
+
+# $1: error message
+# $2: exit code
+error_exit() {
+echo Error: $1
+exit $2
+}
+
+# Calls the mysqlshow command with all given options with appropriate error handling
+mysql_show() {
+mysqlshow $@
+MYSQLRETURN=$?
+if [ $MYSQLRETURN -ne 0 ]; then
+  error_exit "mysql connect error. return code: $MYSQLRETURN" $UNKNOWN
+fi
+}
+
+# Figures out which databases exist
+# $1: Filename for results. Writes all found databases into $1
+get_databases() {
+mysql_show -h ${mysql_host} -u ${mysql_user} --password=${mysql_password} > $TMPFILE
+
+# remove schnodder
+cat $TMPFILE | tail -n +4 | head -n -1 | sed -e s/^\|//g -e s/\|\$//g > $1
+echo "" >  $TMPFILE
+}
+
+# Calls mysqlshow for each databases and writes free InnoDB Space to result file
+# $1: File with databaselist
+# $2: Output file for results
+check_databases(){
+for i in `cat $1`
+do
+FREESPACE=`mysql_show -i -h ${mysql_host} -u ${mysql_user} --password=${mysql_password} $i | grep InnoDB | sed s/'^.*InnoDB free: '//g | cut -d " " -f 1 | sort | head -n 1`
+[ x$FREESPACE != x ]  && echo ${FREESPACE} $i >> $2
+done
+}
+
+# Evaluates results and determines nagios states
+# $1 Resultfile
+evaluate_results() {
+NUMBERINNODBS=`cat $1 | wc -l`
+MINIMUMLINE=`cat $1 | sort | head -n 1`
+MINIMUMDB=`echo $MINIMUMLINE | cut -d " " -f 2`
+MINIMUMFREE=`echo $MINIMUMLINE | cut -d " " -f 1`
+
+if [ $NUMBERINNODBS -eq 0 ]; then
+ EXITCODE=$UNKNOWN
+ EXITTEXT="UNKNOWN - no Tables with engine type  innodb found"
+else
+  if [ $MINIMUMFREE -gt $warning_threshold ] ; then # everything is fine
+    EXITCODE=$OK
+    EXITTEXT="OK - found $NUMBERINNODBS databases with InnoDB tables. $MINIMUMDB has $MINIMUMFREE kb free space left."
+  else
+    if [ $MINIMUMFREE -gt $critical_threshold ] ; then # we are at warning stage
+     EXITCODE=$WARNING
+     EXITTEXT="WARNING - found $NUMBERINNODBS databases with InnoDB tables. $MINIMUMDB has $MINIMUMFREE kb free space left. (less than $warning_threshold)"
+    else # this is critical
+	EXITCODE=$CRITICAL
+	EXITTEXT="CRITICAL - found $NUMBERINNODBS databases with InnoDB tables. $MINIMUMDB has $MINIMUMFREE kb free space left. (less than $critical_threshold)"
+    fi
+ fi
+fi
+}
+
+
+### Parse Arguments
+
+while getopts ":hV:H:u:p:w:c:" Option; do
+	case $Option in
+		h)
+			print_help
+			exit 0
+			;;
+		V)
+			print_revision $PROGNAME $REVISION
+			exit 0
+			;;
+		H)
+			mysql_host=${OPTARG}
+			;;
+		u)
+			mysql_user=${OPTARG}
+			;;
+		p)
+			mysql_password=${OPTARG}
+			;;
+                w)
+                        warning_threshold=${OPTARG}
+                        ;;
+                c)
+                        critical_threshold=${OPTARG}
+                        ;;
+		*)
+			print_help
+			exit 0
+			;;
+	esac
+done
+shift $(($OPTIND - 1))
+
+# Set defaults, if options are missing
+if [ "${mysql_host}" == '' ]; then
+	mysql_host=$DEFAULT_MYSQLHOST
+fi
+if [ "${mysql_user}" == '' ]; then
+	mysql_user=$DEFAULT_USER
+fi
+if [ "${mysql_password}" == '' ]; then
+	mysql_password=$DEFAULT_PASSWORD
+fi
+if [ "${warning_threshold}" == '' ]; then
+	warning_threshold=$DEFAULT_WARNING
+fi
+if [ "${critical_threshold}" == '' ]; then
+        critical_threshold=$DEFAULT_CRITICAL
+fi
+
+### Main Program
+
+get_databases $DBLISTFILE
+check_databases $DBLISTFILE $RESULTFILE
+evaluate_results $RESULTFILE
+cleanup
+echo $EXITTEXT
+exit $EXITCODE
+
+***/MySQL Check Innodb Status***
+
+***MySQL DDL Statements***
+
+ALTER IGNORE TABLE `tMessageWarehouse` ADD PRIMARY KEY (`DatabaseName`,`MessageId`);
+
+***MySQL InnoDB HotBackup Percona Hot Backup innobackupex*** 
+
+innobackupex --user=dbadmin --password= --no-timestamp /backups/day2/hotbackup		(create backup)
+innobackupex --user=dbadmin --password= --apply-log --use-memory=256MB /backups/day2/hotbackup		(apply logs)
+-- get in directory were backup directories are located at and then run:
+innobackupex --copy-back /path/to/where_you_want_to_restore_to	
+(the target is not the backup location but where you want them restored to)
+
+***/link mysql directory***
+
+fdisk /dev/xvda2
+---enter fdisk---
+list help
+add partition
+add partition number (2)
+use all available space
+set partition type to 83 (linux)
+list partition table
+verify partition table
+save partition table
+reboot
+---exit fdisk---
+mkdir /mnt/data01
+mkfs -text4 /dev/xvda2
+mount -text4 /dev/xvda2 /mnt/data01
+cp /etc/fstab /etc/fstab.orig
+vi /etc/fstab
+mount -a
+df -h
+service mysql stop
+mkdir /mnt/data01/mysql_5.5.32
+chown mysql:mysql /mnt/data01
+chown mysql:mysql /mnt/data01/mysql_5.5.32
+cd /var/lib/mysql
+tar -cvf mysql.tar /var/lib/mysql/*
+mv mysql.tar /mnt/data01/mysql_5.5.32/
+cd /mnt/data01/mysql_5.5.32/
+tar -xvf mysql.tar
+rm -r /var/lib/mysql
+ln -s /mnt/data01/mysql_5.5.32/ /var/lib/mysql
+
+vi /etc/apparmor.d/usr.sbin.mysqld and add the new fully qualified directory path
+<snip>----------------------------
+# vim:syntax=apparmor
+# Last Modified: Tue Jun 19 17:37:30 2007
+#include <tunables/global>
+
+/usr/sbin/mysqld {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+  #include <abstractions/user-tmp>
+  #include <abstractions/mysql>
+  #include <abstractions/winbind>
+
+  capability dac_override,
+  capability sys_resource,
+  capability setgid,
+  capability setuid,
+
+  network tcp,
+
+  /etc/hosts.allow r,
+  /etc/hosts.deny r,
+
+  /etc/mysql/*.pem r,
+  /etc/mysql/conf.d/ r,
+  /etc/mysql/conf.d/* r,
+  /etc/mysql/*.cnf r,
+  /usr/lib/mysql/plugin/ r,
+  /usr/lib/mysql/plugin/*.so* mr,
+  /usr/sbin/mysqld mr,
+  /usr/share/mysql/** r,
+  /var/log/mysql.log rw,
+  /var/log/mysql.err rw,
+  /var/lib/mysql/ r,
+  /var/lib/mysql/** rwk,
+  /mnt/database/mysql_5.5.32/ r,
+  /mnt/database/mysql_5.5.32/** rwk,
+  /var/log/mysql/ r,
+  /var/log/mysql/* rw,
+  /var/run/mysqld/mysqld.pid rw,
+  /var/run/mysqld/mysqld.sock w,
+  /run/mysqld/mysqld.pid rw,
+  /run/mysqld/mysqld.sock w,
+
+  /sys/devices/system/cpu/ r,
+
+  # Site-specific additions and overrides. See local/README for details.
+  #include <local/usr.sbin.mysqld>
+}
+</snip>----------------------------
+
+invoke-rc.d apparmor reload
+service mysql stop
+service mysql start
+
+-- mysql dynamic sql generating sql from sql
+
+select concat('alter table ', table_name, ' convert to character set utf8 collate utf8_general_ci;') 
+from information_schema.tables where table_schema = 'mealticket' and table_collation = 'latin1_swedish_ci';
+
+select concat('alter table mealticket.sendgrid_log change ', column_name, " ", column_name, ' text default null;') 
+from information_schema.columns where table_schema = 'mealticket' and table_name = 'sendgrid_log';
+
+###/MySQL###
+
+###SQL SERVER###
+
+ALTER LOGIN [sa] WITH PASSWORD=N'm3ss@g1ng!' -- change sa password
+
+select @@version  --get version
+DBCC SHRINKFILE("wmp11_log-02", EMPTYFILE)   -- shrink or empty log file for delete
+ALTER DATABASE [wmp11]  REMOVE FILE "wmp11_log-02" --delete shrunk file
+
+--get your sql version (version 2k and up)
+
+SELECT 'SQL Server ' 
++ CAST(SERVERPROPERTY('productversion') AS VARCHAR) + ' - ' 
++ CAST(SERVERPROPERTY('productlevel') AS VARCHAR) + ' (' 
++ CAST(SERVERPROPERTY('edition') AS VARCHAR) + ')'
+go
+
+***TSQL***
+select db_name(<dbid>)
+select db_id(<database>)
+select suser_name(), username()
+sp_depends 'your table name';			--compare functions, procs, and the like between two tables using TSQL.
+
+--- get active processes from muliple databases
+select * from sysprocesses 
+inner join sysdatabases
+on sysprocesses.dbid = sysdatabases.dbid
+where sysdatabases.dbid in 
+	((select dbid from sysdatabases 
+	where name in ('master','tempdb')))
+
+select COUNT_BIG(*) -- get row count bigger than 2 billion rows (count() uses int)
+select ROWCOUNT_BIG() -- get affected row count bigger than 2 billion rows (@@rowcount uses int)
+select 'backup database '+ ''+ name +'' + ' to disk = ' + ' ''i:\backups\'+ ''+ name +'' + '.bak''' + char(13) + 'go' from sysdatabases where name not in ('tempdb','model','pubs','temp')
+select 'GRANT EXECUTE ON '+ ''+ name +'' + ' to tl_app '+  char(13) + '' from sysobjects where xtype = 'P' -- dynamic sql generation (auto execute on stored proc)
+select 'sp_spaceused '+ ''+ name +'' +  char(13) + 'go' from sysobjects where xtype = 'U' -- dynamic sql generation
+
+-- dynamic sql for auto fix logins
+declare @sp_change nvarchar(2000)
+set @sp_change = 'exec sp_change_users_login ''auto_fix'''
+select  @sp_change + ', ' + '''' + name + '''' + '' from master.dbo.syslogins
+
+select name from sysusers
+select * from sysdatabases at isolation 0  (does not cause locks)
+select * from sysobjects where xtype = "p" procudure "s" system "t" trigger "r" rule "v" view "u" user  -- Sql Server
+select * from sysobjects where xtype = "p" procudure "s" system "t" trigger "r" rule "v" view "u" user  -- Sybase
+set noexec on/off set showplan on/off
+select @@servername
+select propertyid, datekey, count (*) from ZestimateDetailHistory group by PropertyID, datekey having count (*) > 1    ---find duplicate records
+
+***Triggers***
+
+exec sp_helptrigger <table-name>
+select * from <db-name>.dbo.sysobjects where xtype = 'TR' 
+select * from <db-name>.dbo.sysobjects where OBJECTPROPERTY(id, 'IsTrigger') = 1
+
+***/Triggers***
+
+-- adds db_datareader role for every Windows login in a database
+DECLARE @User sysname, @c cursor
+SET @c = CURSOR FOR
+SELECT name
+FROM sysusers
+WHERE --sl.name like '%\%'
+    isntuser = 1
+    and uid <> 1
+FOR READ ONLY
+OPEN @c
+FETCH @c INTO @User
+WHILE @@FETCH_STATUS = 0
+    BEGIN
+        EXEC sp_addrolemember 'db_datareader',@User
+        FETCH @c INTO @User
+    END
+CLOSE @c
+DEALLOCATE @c
+
+-- THIS KILLS ALL USER IN DATABASE
+
+set nocount on
+go
+declare @ErrorMsg    varchar( 440 )
+select @ErrorMsg =
+       'KillAll.sql running ' +
+       'db_name=' + db_name() + ';' +
+       'hostname=' + rtrim(convert(varchar(40),hostname)) + ';' +
+       'nt_domain=' + rtrim(convert(varchar(40),nt_domain)) + ';' +
+       'nt_username=' + rtrim(convert(varchar(40),nt_username)) + ';' +
+       'loginame=' + rtrim(convert(varchar(30),loginame)) + ';' + 
+       'spid=' + convert(varchar(10), @@spid) + ';' +
+       'program_name=' + rtrim(convert(varchar(40),program_name)) + ';' +
+       'servername=' + @@servername + ';' +
+       'net_address=' + rtrim(convert(varchar(30),net_address)) + ';' +
+       'getdate=' + rtrim(convert(varchar(30),getdate())) + ';' +
+       'login_time=' + rtrim(convert(varchar(30),login_time)) + ';'
+from sysprocesses
+where spid = @@spid
+raiserror (@ErrorMsg, 1, 1 ) with log
+go
+
+select GetDate(), 'Users before the kill'  
+exec sp_who
+go
+
+use master
+go
+
+declare @cmd varchar(255), @spid smallint
+declare c1 insensitive cursor for
+   select sp.spid
+     from sysprocesses sp
+     join sysdatabases db
+       on sp.dbid = db.dbid
+    where db.name not in ('master', 'model', 'msdb', 'tempdb')
+    and   cmd not in ('SIGNAL HANDLER', 'LOCK MONITOR', 'LAZY WRITER',
+                     'LOG WRITER', 'CHECKPOINT SLEEP')
+open c1
+while (1=1) begin
+ fetch next from c1 into @spid
+ if @@Fetch_Status <> 0 break
+ select @cmd = 'kill ' + convert(varchar(12),@spid)
+ print @cmd
+ exec (@cmd)
+end
+close c1
+deallocate c1
+go
+
+select GetDate(), 'Users after the kill'
+exec sp_who
+go
+
+--------------------------------------------------------------------------------
+
+select sid from PropertySnapshotZ2..sysusers where name='zillow'
+select @@servername,loginname,sid from master..syslogins where name='zillow'
+exec xp_msver 	-- gets sql server information; also can be used with parameters to select only certain columns
+alter database RegionM4 set offline with rollback immediate
+ALTER DATABASE propertysnapshot set online
+ALTER DATABASE propertysnapshot set RESTRICTED_USER with rollback immediate
+ALTER DATABASE propertysnapshot set MULTI_USER
+ALTER DATABASE propertysnapshot set SINGLE_USER with rollback immediate
+backup log UserDBZ2 with truncate_only
+dbcc shrinkfile('UserDB_log')
+exec sp_change_users_login 'Auto_Fix', 'Zillow',NULL  -- fix bad sid login
+OPTION (MAXDOP 1, LOOP JOIN)	 --parallelism
+dbcc checkdb ('Work', repair_rebuild)
+dbcc freeproccache 
+dbcc dropcleanbuffers
+dbcc memusage
+dbcc showcontig				-- index fragmentation like optdiag in sybase
+dbcc inputbuffer(<pid>)
+dbcc outputbuffer(<spid>)
+dbcc updateusage --run after recovering a database
+dbcc updatestats <table> 
+dbcc updatestats <table> with fullscan --run after recovering a database
+dbcc memorystatus
+dbcc sqlperf(umsstats)
+dbcc shrinkfile (UserDB_data, 7)	-- shrinks data file to 7 MB
+dbcc opentran
+sp_databases
+sp_tables
+sp_helpuser
+sp_columns
+sp_server_info
+sp_stored_procedures
+exec xp_sqllitespeed_version
+bcp "select PropertyID from PropertySnapshotM4..ResultSetData where State in ('WA','OR','CA')" queryout property_id.txt -S wfc-str-prs-002 -c -T
+exec sp_MSforeachtable @command1 = 'sp_spaceused ''?'''  -- single quotes around the ? are doubled so that the ? is escaped
+trace flag 1118
+
+--Might need to reboot sql
+dbcc shrinkfile (tempdev_2, truncateonly)
+go
+dbcc shrinkfile (tempdev_2, emptyfile)
+go
+alter database tempdb
+remove file tempdev_2
+go
+
+sp_attach_db @dbname='CascadeCMS',
+	@filename1=N'G:\sql\data\cascade.MDF',
+	@filename2=N'O:\sql\log\cascade_log.Ldf' 
+
+*** SQL Server Replication ***
+
+use <database name>
+go
+exec dbo.replicationpublisherdrop_
+use <database name>
+go
+exec dbo.replicationpublishercreate_
+
+------------------------
+EXEC sp_MSforeachdb @command1="print '?' DBCC CHECKDB ('?')"
+------------------------
+-- Script for sp_ForEachDB.Executes a given commamd for all user DBs.Example: EXEC sp_ForEachDB 'exec sp_helpdb ?'
+-- Important: create these sprocs in the MASTER DB.
+USE master
+GO
+CREATE PROCEDURE sp_ForEachDB
+@cmd VARCHAR(8000),
+-- Set to 0 if you only want to print the statements, set to 1 to execute them
+@exec bit = 1 
+-- @exec bit = 0 
+AS
+DECLARE @sql VARCHAR(8000)
+SELECT @sql = isnull(@sql + CHAR(13), '') +
+REPLACE(@cmd, '?', name)
+FROM sysdatabases
+WHERE name NOT IN 
+('master', 'model', 'msdb', 'tempdb')
+IF @exec = 0
+PRINT @sql
+ELSE
+EXEC(@sql)
+------------------------
+-- Script for sp_ForEachTable.
+-- Executes a given commamd for all user tables in a database.
+-- Example: EXEC sp_ForEachTable 'select top 10 from ?'
+CREATE PROCEDURE sp_ForEachTable
+@cmd VARCHAR(8000),
+@exec bit = 1 
+/* Set to 0 if you only want to print the statements, not execute them */
+AS
+DECLARE @sql VARCHAR(8000)
+SELECT @sql = isnull(@sql + CHAR(13), '') +
+REPLACE(@cmd, '?', name)
+FROM sysobjects
+WHERE xtype = 'u'
+IF @exec = 0
+PRINT @sql
+ELSE
+EXEC(@sql)
+------------------------
+/*
+Create Dynamic SQL
+*/
+DECLARE @Sql varchar(MAX)
+SET @Sql = 'CREATE DATABASE ' + DB_NAME() + '_ss_05052006 ON ' + CHAR(13)
+SELECT @SQL = @Sql + ' (NAME = ' + name + ',' + CHAR(13) + ' FILENAME = ''' + LEFT(FileName, LEN(FileName) - 4) + '_ss.ss''),' + CHAR(13)
+FROM SYSFILES
+WHERE name like ('%[_]data%') -- Only include the data files… Assumes that all data files are logically named <dbname>_data
+PRINT LEFT(@SQL, LEN(@SQL) - 2) + CHAR(13) + 'AS SNAPSHOT OF ' + DB_NAME()
+
+DECLARE @Sql varchar(MAX)
+SET @Sql = 'CREATE DATABASE ' + DB_NAME() + '_ss ON ' + CHAR(13)
+SELECT @SQL = @Sql + ' (NAME = ' + name + ',' + CHAR(13) + ' FILENAME = ''' + LEFT(FileName, LEN(FileName) - 4) + '_ss.ss''),' + CHAR(13)
+FROM SYSFILES
+WHERE name not like ('%log') -- Only include the data files… Assumes that all data files are logically named <dbname>_data
+PRINT LEFT(@SQL, LEN(@SQL) -2) + CHAR(13) + 'AS SNAPSHOT OF ' + DB_NAME()
+
+------------------------
+-- Rebuild All Indexes in Table
+set nocount on
+go
+declare @id int
+declare @name varchar(255)
+select @name = ''
+select 'Rebuilding All IDX for ALL user tables, start time:' ,getdate()
+while 1=1
+begin
+            set rowcount 1
+            select @name = name from sysobjects nolock
+                        where type = 'U' 
+                        and name > @name
+                       --and name in ('','') fill in if you want to select tables
+                        order by name
+            if @@rowcount = 0
+                        break
+            set rowcount 0
+            select @id = object_id(@name)
+--          dbcc showcontig (@id)
+             select 'starting',@name ,getdate()
+            dbcc DBREINDEX (@name, '', 0)
+             select 'completed',@name ,getdate()
+            print ' ' 
+end
+go
+select 'finished  IDX rebuild for ALL user tables, start time:',getdate()
+------------------------
+
+select d.name, p.* from sys.sysprocesses p
+inner join sys.sysdatabases d
+on p.dbid = d.dbid
+where d.name = 'msdb'
+go
+
+select * from master..sysprocesses with (nolock)
+where status not in ('dormant', 'suspended')
+and dbid = db_id(N'msdb')
+go
+
+------------------------
+DECLARE @User sysname, @c cursor
+
+SET @c = CURSOR FOR
+SELECT name
+FROM sysusers
+WHERE --sl.name like '%\%'
+    isntuser = 1
+    and uid <> 1
+FOR READ ONLY
+
+OPEN @c
+FETCH @c INTO @User
+WHILE @@FETCH_STATUS = 0
+    BEGIN
+        EXEC sp_addrolemember 'db_datareader',@User
+        FETCH @c INTO @User
+    END
+CLOSE @c
+DEALLOCATE @c
+------------------------
+DECLARE @c cursor
+    , @Table_name sysname
+    , @SQL varchar(max)
+SET @c = cursor for 
+    SELECT name from sysobjects WHERE type = 'U' AND status >=0
+FOR READ ONLY
+
+OPEN @c
+FETCH @c INTO @Table_Name
+WHILE @@FETCH_STATUS = 0
+    BEGIN
+        SET @SQL = 'dbcc reindex(''' + @Table_Name + ''')'
+        PRINT @SQL
+        FETCH @c INTO @Table_Name
+    END
+CLOSE @c
+DEALLOCATE @c 
+------------------------
+select 'dbcc reindex(''' + name + ''')'
+from sysobjects where type = 'U' and status >= 0
+------------------------
+select db_id(N'Zestimate')  -- gets database id
+select db_name(9)    -- gets database name
+select object_id(N'DBA_check')    -- gets table id
+------------------------
+select employee
+from table
+where position in ('value','value2')  -- instead of using "or" statement
+------------------------
+use <database_name>
+go
+CREATE TABLE ##Table(
+	rowid int identity (1,1),
+	tabid int,
+	tabname varchar(100) )
+CREATE TABLE ##SpaceTable(
+	ObjectName sysname,
+	Rows varchar(50),
+	Reserved varchar(50),
+	Data varchar(50),
+	Index_Size varchar(50),
+	Unused varchar(50) )
+declare @tabcount int, @tabname varchar(100)
+--set up "cursorless cursor"
+INSERT INTO ##Table(tabid, tabname)
+select id, so.name
+from sysobjects so
+where so.xtype = 'U'
+select @tabcount = @@rowcount
+--count down all the rowids to loop on all tables
+WHILE @tabcount > 0 
+BEGIN
+	SELECT @tabname = ltrim(rtrim([tabname]))
+	FROM ##table
+	WHERE rowid = @tabcount 
+	INSERT INTO ##SpaceTable(ObjectName,Rows,Reserved,Data,Index_Size,Unused )
+	EXEC('sp_spaceused '  + @tabname  )
+	SET @tabcount = @tabcount - 1
+END
+------------------------
+DBCC TRACEON (3604)  -- this trace flag sends trace output to the client. 
+DBCC TRACEON (1204)  -- this trace flag returns the type of locks participating in a deadlock and the current command affected to the error log. 
+DBCC TRACEON (1205)  -- this trace flag returns more detailed information about the command being executed at the time of a deadlock to the error log. 
+DBCC TRACESTATUS (-1) -- gives status of all traceflags used
+DBCC TRACEOFF (3604)  -- turns off specific traceflag and must be run for each traceflag in use
+DBCC TRACEON (<dbcc you want>, -1) -- this applies dbcc to all PID not just the session it was run from
+------------------------
+-- get users, roles, permissions for a specific database
+SELECT
+    sp.name,
+    grantee_principal.name,
+    grantor_principal.name AS [Grantor],
+    prmssn.Permission_name, 
+    prmssn.State_desc,
+    sp.type_desc--,sp.*
+FROM sys.all_objects AS sp WITH(NOLOCK)
+    INNER JOIN sys.database_permissions AS prmssn  WITH(NOLOCK)
+        ON prmssn.major_id=sp.object_id 
+        AND prmssn.minor_id=0 
+        AND prmssn.class=1
+    INNER JOIN sys.database_principals AS grantor_principal  WITH(NOLOCK)
+        ON grantor_principal.principal_id = prmssn.grantor_principal_id
+    INNER JOIN sys.database_principals AS grantee_principal  WITH(NOLOCK)
+        ON grantee_principal.principal_id = prmssn.grantee_principal_id
+WHERE grantee_principal.name not like 'zillow%'
+    and sp.is_ms_shipped = 0
+ORDER BY sp.name, grantee_principal.name
+------------------------
+-- changing sql server name
+use master
+go
+sp_dropserver 'WFC-TES-PRO-001'
+go
+sp_addserver 'WFC-TES-PRO-004',local
+go
+sp_helpserver
+go
+------------------------
+-- timing script with delay
+set nocount on
+declare @count1 int
+	,@count2 int
+	,@count_dif int
+	,@startime datetime
+	,@stoptime datetime
+	,@elaptime decimal(10,3)
+	,@totaltime decimal(10,3)
+	,@addrate decimal(10,1)
+select @count1 = count(*) from PropertyClaim with (nolock)
+select @startime = getdate()
+waitfor delay '00:01:00'
+select @count2 = count(*) from PropertyClaim with (nolock)
+select @stoptime = getdate()
+select @count_dif = @count2 - @count1,
+	@elaptime = DATEDIFF(s, @startime,@stoptime),
+	@addrate = @count_dif / @elaptime,
+	@totaltime = @elaptime / 60
+select @count_dif as 'Propertys added ', @totaltime as 'Minutes Waited', @addrate as 'Properties per Second' 
+------------------------
+restart RemoteRegistry service 			-- to refresh lost performance counters
+------------------------
+Corrupt Database Mirror Situation
+
+If you can not remove a mirror:
+stop sql; rename data files; restart SQL; drop the database. 
+Do this only to the mirror instance and not the principle.
+
+alter database mirror	--sets timeout on an established mirror. 20 represents 20 seconds.
+set partner timeout 20
+------------------------
+
+-- find all user defined stored procedures
+
+USE [your_database_name_here];
+GO
+SELECT * FROM sys.all_objects
+WHERE ([type] = 'P' OR [type] = 'X' OR [type] = 'PC')
+AND [is_ms_shipped] = 0
+ORDER BY [name];
+GO
+
+-- find all stored procedures
+
+USE [your_database_name_here];
+GO
+SELECT * FROM sys.all_objects
+WHERE ([type] = 'P' OR [type] = 'X' OR [type] = 'PC')
+ORDER BY [name];
+GO
+
+-- database object type listing
+ 	
+Initial(s)  Type Of Object
+FN  SQL Scalar Function
+IF  Inline Table Valued Function
+P  SQL Stored Procedure
+PC  CLR Stored Procedure
+TF  SQL Table Valued Function
+V  View
+X  Extended Stored Procedure
+
+Database General Naming Conventions
+
+Whenever possible do not use underscores in object names ... 
+Do not abbreviate names except where required due to length 
+All objects are to be created and thus owned by DBO - no exceptions 
+Each object is to be created in an individual script 
+
+Database Naming Conventions
+Table Naming Conventions
+Column Naming Conventions
+
+Datatype abbreviations:
+o       ID
+o       Amt
+o       Bool
+o       Rate
+o       Cnt
+o       Value
+o       Nbr
+o       Rank
+o       Mask
+o       Desc
+o       Name
+o       Code
+o       Str
+o       Date
+o       Blob/Img
+
+Constraint Naming Conventions
+PK: pk_<referencedtablename> 
+FK: fk<referencingtablename>_<referencedtablename> 
+
+Index Naming Conventions
+Function Naming Conventions
+Stored Procedure Naming Conventions
+
+spname = <noun> <class> <action> <qualifier> 
+where action types include: Search (list everything); List (list known #); Get (by something); Set (update); Del (delete); Add (insert)
+i.e. PropertyDetailsGetByID or broken down to Property--Details--Get--ByID
+
+Every SP will perform one of the following actions, and will therefore have that action included in the name (Select specific information based on a parameter):
+
+Get – Always returns information
+Set – Will take appropriate action based on existence of data.  To state another way, this type of SP will update if there row already exists and will add one if it does not.  Compare with Update & Add. 
+Update – Always performs updates (they never insert).  Compare with Set & Add. 
+Add – Always inserts data (does not update).  Compare with Set & Update. 
+Del – Always deletes data. 
+
+SP names will always follow this naming convention:
+<noun> -  usually a table, logical/functional area or column name (i.e. Property)
+<class> - (i.e. Detail) not required, but helpful in differentiating between similar calls or calls with similar names.  The trick here is to ensure that your name will make sense even two years from now
+<action> - from list above (i.e. Get), no exceptions
+<qualifier(s)> - descriptor(s) that add specificity to the name, such as ByID, ForLastTransaction, etc.   These can be additive. 
+Following the dots here brings us to PropertyDetailGetByID 
+
+Versioning – In order to ensure we properly protect our interfaces, all SPs will be versioned as needed
+
+SP Coding standards: 
+o Always use the owner name when referencing on object (dbo.<objectname>) 
+o Use constants rather than literals to gain performance edge 
+o Reserved words (blue in query analyzer) are to be typed in CAPS 
+o Tabs are always to be stored as 4 spaces (setting in text editor and/or in QA) 
+o Tabs are to be used to indent code to make it more readable. Following is an example of a select statement: 
+o Header are to be used in every SP and must include: 
+o Copyright info 
+o Description 
+o Result set(s) 
+o Return Value(es) 
+o Error code(s) 
+o Owner/author info 
+o Change History 
+------------------------  
+--spid_not_asleep
+select db.name as 'db_name', sp.*
+from master.dbo.sysprocesses sp with (nolock) 
+join master.dbo.sysdatabases db with (nolock) 
+on db.dbid = sp.dbid 
+where sp.status <> 'sleeping' and db.name not in ('msdb','master','tempdb')
+------------------------  
+exec xp_fixeddrives  -- get os free drive space by drive letter
+exec xp_getfiledetails  -- gets file access details
+WAITFOR DELAY '00:00:05' -- pauses for a period of 5 seconds 
+
+------------------------   create sp_help_revlogin
+if exists (select * from dbo.sysobjects where id = object_id(N'[dbo].[sp_help_revlogin]') and OBJECTPROPERTY(id, N'IsProcedure') = 1)
+drop procedure [dbo].[sp_help_revlogin]
+GO
+
+SET QUOTED_IDENTIFIER ON 
+GO
+SET ANSI_NULLS ON 
+GO
+
+CREATE PROCEDURE sp_help_revlogin @login_name sysname = NULL AS
+DECLARE @name    sysname
+DECLARE @xstatus int
+DECLARE @binpwd  varbinary (256)
+DECLARE @txtpwd  sysname
+DECLARE @tmpstr  varchar (256)
+DECLARE @SID_varbinary varbinary(85)
+DECLARE @SID_string varchar(256)
+
+IF (@login_name IS NULL)
+  DECLARE login_curs CURSOR FOR 
+    SELECT sid, name, xstatus, password FROM master..sysxlogins 
+    WHERE srvid IS NULL AND name <> 'sa'
+ELSE
+  DECLARE login_curs CURSOR FOR 
+    SELECT sid, name, xstatus, password FROM master..sysxlogins 
+    WHERE srvid IS NULL AND name = @login_name
+OPEN login_curs 
+FETCH NEXT FROM login_curs INTO @SID_varbinary, @name, @xstatus, @binpwd
+IF (@@fetch_status = -1)
+BEGIN
+  PRINT 'No login(s) found.'
+  CLOSE login_curs 
+  DEALLOCATE login_curs 
+  RETURN -1
+END
+SET @tmpstr = '/* sp_help_revlogin script ' 
+PRINT @tmpstr
+SET @tmpstr = '** Generated ' 
+  + CONVERT (varchar, GETDATE()) + ' on ' + @@SERVERNAME + ' */'
+PRINT @tmpstr
+PRINT ''
+PRINT 'DECLARE @pwd sysname'
+WHILE (@@fetch_status <> -1)
+BEGIN
+  IF (@@fetch_status <> -2)
+  BEGIN
+    PRINT ''
+    SET @tmpstr = '-- Login: ' + @name
+    PRINT @tmpstr 
+    IF (@xstatus & 4) = 4
+    BEGIN -- NT authenticated account/group
+      IF (@xstatus & 1) = 1
+      BEGIN -- NT login is denied access
+        SET @tmpstr = 'EXEC master..sp_denylogin ''' + @name + ''''
+        PRINT @tmpstr 
+      END
+      ELSE BEGIN -- NT login has access
+        SET @tmpstr = 'EXEC master..sp_grantlogin ''' + @name + ''''
+        PRINT @tmpstr 
+      END
+    END
+    ELSE BEGIN -- SQL Server authentication
+      IF (@binpwd IS NOT NULL)
+      BEGIN -- Non-null password
+        EXEC sp_hexadecimal @binpwd, @txtpwd OUT
+        IF (@xstatus & 2048) = 2048
+          SET @tmpstr = 'SET @pwd = CONVERT (varchar(256), ' + @txtpwd + ')'
+        ELSE
+          SET @tmpstr = 'SET @pwd = CONVERT (varbinary(256), ' + @txtpwd + ')'
+        PRINT @tmpstr
+	EXEC sp_hexadecimal @SID_varbinary,@SID_string OUT
+        SET @tmpstr = 'EXEC master..sp_addlogin ''' + @name 
+          + ''', @pwd, @sid = ' + @SID_string + ', @encryptopt = '
+      END
+      ELSE BEGIN 
+        -- Null password
+	EXEC sp_hexadecimal @SID_varbinary,@SID_string OUT
+        SET @tmpstr = 'EXEC master..sp_addlogin ''' + @name 
+          + ''', NULL, @sid = ' + @SID_string + ', @encryptopt = '
+      END
+      IF (@xstatus & 2048) = 2048
+        -- login upgraded from 6.5
+        SET @tmpstr = @tmpstr + '''skip_encryption_old''' 
+      ELSE 
+        SET @tmpstr = @tmpstr + '''skip_encryption'''
+      PRINT @tmpstr 
+    END
+  END
+  FETCH NEXT FROM login_curs INTO @SID_varbinary, @name, @xstatus, @binpwd
+  END
+CLOSE login_curs 
+DEALLOCATE login_curs 
+RETURN 0
+
+GO
+SET QUOTED_IDENTIFIER OFF 
+GO
+SET ANSI_NULLS ON 
+GO
+------------------------
+
+------------------------   
+-- create sp_hexadecimal
+if exists (select * from dbo.sysobjects where id = object_id(N'[dbo].[sp_hexadecimal]') and OBJECTPROPERTY(id, N'IsProcedure') = 1)
+drop procedure [dbo].[sp_hexadecimal]
+GO
+
+SET QUOTED_IDENTIFIER ON 
+GO
+SET ANSI_NULLS ON 
+GO
+
+CREATE PROCEDURE sp_hexadecimal
+    @binvalue varbinary(256),
+    @hexvalue varchar(256) OUTPUT
+AS
+DECLARE @charvalue varchar(256)
+DECLARE @i int
+DECLARE @length int
+DECLARE @hexstring char(16)
+SELECT @charvalue = '0x'
+SELECT @i = 1
+SELECT @length = DATALENGTH (@binvalue)
+SELECT @hexstring = '0123456789ABCDEF' 
+WHILE (@i <= @length) 
+BEGIN
+  DECLARE @tempint int
+  DECLARE @firstint int
+  DECLARE @secondint int
+  SELECT @tempint = CONVERT(int, SUBSTRING(@binvalue,@i,1))
+  SELECT @firstint = FLOOR(@tempint/16)
+  SELECT @secondint = @tempint - (@firstint*16)
+  SELECT @charvalue = @charvalue +
+    SUBSTRING(@hexstring, @firstint+1, 1) +
+    SUBSTRING(@hexstring, @secondint+1, 1)
+  SELECT @i = @i + 1
+END
+SELECT @hexvalue = @charvalue
+
+GO
+SET QUOTED_IDENTIFIER OFF 
+GO
+SET ANSI_NULLS ON 
+GO
+------------------------
+
+-- Disable all table constraints
+
+ALTER TABLE MyTable NOCHECK CONSTRAINT ALL
+
+-- Enable all table constraints
+ALTER TABLE MyTable CHECK CONSTRAINT ALL
+
+-- Disable single constraint
+ALTER TABLE MyTable NOCHECK CONSTRAINT MyConstraint
+
+-- Enable single constraint
+ALTER TABLE MyTable CHECK CONSTRAINT MyConstraint
+
+------------------------ 
+
+-- strip out all tables of database that has tables with foreign key “parent” tables and tables with foreign key “children”, you can use the following script:
+
+-- disable referential integrity
+EXEC sp_MSForEachTable 'ALTER TABLE ? NOCHECK CONSTRAINT ALL'
+GO
+
+-- go through each table and flush data
+EXEC sp_MSForEachTable '
+IF OBJECTPROPERTY(object_id(''?''), ''TableHasForeignRef'') = 1
+ 	DELETE FROM ?
+ELSE 
+ 	TRUNCATE TABLE ?’
+GO
+
+-- enable referential integrity
+EXEC sp_MSForEachTable 'ALTER TABLE ? CHECK CONSTRAINT ALL'
+GO
+
+------------------------ 
+
+-- get information on current enabled sql server jobs
+
+SELECT b.name as job_name,c.Schedule,c.next_run_time
+      ,step_name,subsystem,command,database_name 
+ FROM msdb..sysjobsteps a
+INNER JOIN (SELECT name,job_id 
+                FROM msdb..sysjobs 
+                WHERE enabled = 1)b 
+      ON a.job_id =b.job_id 
+INNER JOIN (SELECT job_id
+                  ,(CASE WHEN freq_type = 4 THEN 'Daily' 
+                         WHEN freq_type =16 THEN 'Monthly'
+                         WHEN freq_type =8  THEN 'Weekly' 
+                         END )as Schedule
+                  ,left(right('000000'+convert(varchar,next_run_time),6),4) as next_run_time
+              FROM msdb..sysjobschedules ) c 
+     ON a.job_id =c.job_id
+
+------------------------ 
+-- gets file, file name, size in mb, space used, available space for all databases
+-- grabbed from http://www.sqlservercentral.com/columnists/jtshyman/usingxp_execresultsettoobtaindatabasesizeinformati.asp
+
+DECLARE @DBName SYSNAME
+DECLARE @SQLCmd NVARCHAR(2000)
+
+SET @DBNAME=''
+
+WHILE @DBName IS NOT NULL
+	BEGIN
+		SELECT @DBNAME=MIN(name) FROM MASTER..SYSDATABASES WHERE sid > 1 and name>@DBNAME
+		SET @SQLCmd='SELECT ''SELECT name AS [File],
+			filename as [File Name],
+			CAST(size/128.0 as DECIMAL(10,2)) AS [Size in MB],
+			CAST(FILEPROPERTY(name, ''SpaceUsed'')/128.0 as DECIMAL(10,2)) as [Space Used],
+			CAST(size/128.0-(FILEPROPERTY(name, ''SpaceUsed'')/128.0) AS DECIMAL(10,2)) 
+			AS [Available Space] FROM SYSFILES'
+		--PRINT @SQLCmd
+		IF @DBName IS NULL BREAK
+		EXEC MASTER..XP_EXECRESULTSSET @SQLCmd, @DBName
+	END
+------------------------ 
+
+-- list all indexes with size, keys, and description 
+
+SET NOCOUNT ON
+SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+
+DECLARE @TabName varchar(100)
+
+CREATE TABLE #T (TabName varchar(200), IndexName varchar(200), IndexDescr varchar(200), IndexKeys varchar(200), IndexSize int)
+
+DECLARE TCursor CURSOR FAST_FORWARD LOCAL FOR
+	SELECT name FROM sysobjects WHERE xtype = 'U'
+OPEN TCursor
+
+FETCH NEXT FROM TCursor INTO @TabName
+WHILE @@FETCH_STATUS = 0
+	BEGIN
+		INSERT INTO #T (IndexName, IndexDescr, IndexKeys)
+		EXEC sp_helpindex @TabName
+		
+		UPDATE #T SET TabName = @TabName WHERE TabName IS NULL
+		
+		FETCH NEXT FROM TCursor INTO @TabName
+	END
+
+CLOSE TCursor
+DEALLOCATE TCursor
+GO
+
+DECLARE @ValueCoef int
+SELECT @ValueCoef = low FROM Master.dbo.spt_values WHERE number = 1 AND type = N'E'
+
+UPDATE #T SET IndexSize = 
+	((CAST(sysindexes.used AS bigint) * @ValueCoef)/1024)/1024
+		FROM sysobjects INNER JOIN sysindexes ON sysobjects.id = sysindexes.id
+			INNER JOIN #T T ON T.TabName = sysobjects.name AND T.IndexName = sysindexes.name
+
+SELECT * FROM #T
+--WHERE IndexDescr LIKE '%nonclustered%'  --Here various filters can be applied
+ORDER BY TabName, IndexName 
+GO
+
+DROP TABLE #T
+GO
+
+------------------------ 
+-- delete dupes without a cursor 
+-- delete duplicates without a cursor 
+
+DECLARE @DupCount INT
+SET @DupCount = 0
+SELECT @DupCount = COUNT(*)
+	FROM t1
+	GROUP BY i, j
+	HAVING COUNT(*) > 1
+
+WHILE @DupCount > 0
+BEGIN
+	SET ROWCOUNT 1
+
+	DELETE t1
+	FROM t1 
+	JOIN (SELECT i, j
+		FROM t1
+		GROUP BY i, j
+		HAVING COUNT(*) > 1
+	      ) t2
+	ON  t1.i = t2.i
+	AND t1.j = t2.j
+
+	SET ROWCOUNT 0
+
+	SELECT @DupCount = COUNT(*)
+	FROM    (SELECT *
+		 FROM t1
+	 	 GROUP BY i, j
+		 HAVING COUNT(*) > 1
+		) tp
+END
+------------------------
+-- delete dupes
+-- delete duplicates
+
+select iq1.jobid, iq1.priority 
+from athena.InitializationQueue iq1
+inner join athena.InitializationQueue iq2
+on iq1.jobid = iq2.jobid and iq1.priority = iq2.priority
+group by iq1.jobid, iq1.priority having count(*) > 1
+ 
+------------------------
+
+--list_all_db_recovery_modes.sql
+
+USE master
+GO
+SET QUOTED_IDENTIFIER ON
+-- Declare the variable to store the value [database name] returned by FETCH.
+DECLARE @dbname sysname
+
+-- Declare a cursor to iterate through the list of databases
+DECLARE db_recovery_cursor CURSOR FOR
+SELECT name from sysdatabases
+-- Open the cursor
+OPEN db_recovery_cursor
+
+-- Perform the first fetch and store the value in a variable.
+FETCH NEXT FROM db_recovery_cursor INTO @dbname
+
+-- loop through cursor until no more records fetched
+WHILE @@FETCH_STATUS = 0
+BEGIN
+-- display each dataabase and recovery model setting not set to FULL
+IF (SELECT DATABASEPROPERTYEX(@dbname,'RECOVERY')) <> 'FULL'
+BEGIN
+SELECT DATABASEPROPERTYEX(@dbname,'RECOVERY'), @dbname
+END
+-- fetch the next database name
+FETCH NEXT FROM db_recovery_cursor INTO @dbname
+END
+-- close the cursor and deallocate memory used by cursor
+CLOSE db_recovery_cursor
+DEALLOCATE db_recovery_cursor
+
+------------------------ 
+
+--set_all_db_recovery_to_full.sql
+
+USE master
+GO
+-- Declare a variable to store the value [database name] returned by FETCH.
+DECLARE @dbname sysname, @cmd varchar(1000)
+
+-- Declare a cursor to iterate through the list of databases
+DECLARE db_recovery_cursor CURSOR FOR
+SELECT name from sysdatabases where status = 24
+-- Open the cursor
+OPEN db_recovery_cursor
+
+-- Perform the first fetch and store the value in a variable.
+FETCH NEXT FROM db_recovery_cursor INTO @dbname
+
+-- loop through cursor until no more records fetched
+WHILE @@FETCH_STATUS = 0
+BEGIN
+-- create the alter database command for each database
+SET @cmd = 'ALTER DATABASE ' + @dbname + ' SET RECOVERY FULL'
+-- alter each dataabase setting the recovery model to FULL
+EXEC(@cmd)
+PRINT @dbname
+-- fetch the next database name
+FETCH NEXT FROM db_recovery_cursor INTO @dbname
+END
+-- close the cursor and deallocate memory used by cursor
+CLOSE db_recovery_cursor
+DEALLOCATE db_recovery_cursor
+
+------------------------ 
+
+--set_all_db_recovery_to_simple.sql
+
+USE master
+GO
+-- Declare a variable to store the value [database name] returned by FETCH.
+DECLARE @dbname sysname, @cmd varchar(1000)
+
+-- Declare a cursor to iterate through the list of databases
+DECLARE db_recovery_cursor CURSOR FOR
+SELECT name from sysdatabases where status = 24
+-- Open the cursor
+OPEN db_recovery_cursor
+
+-- Perform the first fetch and store the value in a variable.
+FETCH NEXT FROM db_recovery_cursor INTO @dbname
+
+-- loop through cursor until no more records fetched
+WHILE @@FETCH_STATUS = 0
+BEGIN
+-- create the alter database command for each database
+SET @cmd = 'ALTER DATABASE ' + @dbname + ' SET RECOVERY SIMPLE'
+-- alter each dataabase setting the recovery model to FULL
+EXEC(@cmd)
+PRINT @dbname
+-- fetch the next database name
+FETCH NEXT FROM db_recovery_cursor INTO @dbname
+END
+-- close the cursor and deallocate memory used by cursor
+CLOSE db_recovery_cursor
+DEALLOCATE db_recovery_cursor
+
+------------------------ 
+
+-- set simple recovery mode
+
+USE master
+GO
+-- Declare a variable to store the database name returned by FETCH.
+DECLARE @dbname sysname, @cmd varchar(1000)
+ 
+-- Declare a cursor to populate with list of databases
+DECLARE db_recovery_cursor CURSOR FOR
+SELECT name from sysdatabases WHERE name NOT IN ('master', 'model', 'msdb', 'tempdb') and status = 24
+OPEN db_recovery_cursor
+FETCH NEXT FROM db_recovery_cursor INTO @dbname
+ 
+-- loop through cursor and execute command
+WHILE @@FETCH_STATUS = 0
+BEGIN
+SET @cmd = 'ALTER DATABASE ' + @dbname + ' SET RECOVERY SIMPLE'
+EXEC(@cmd)
+PRINT @dbname
+FETCH NEXT FROM db_recovery_cursor INTO @dbname
+END
+CLOSE db_recovery_cursor
+DEALLOCATE db_recovery_cursor
+
+------------------------ 
+
+-- truncate log for each user db
+ 
+USE master
+GO
+DECLARE @dbname varchar(1000), @cmd varchar(1000)
+ 
+DECLARE trunc_log_cursor CURSOR FOR
+select name from master..sysdatabases where name NOT IN ('master', 'model', 'msdb', 'tempdb') and status = 24
+OPEN trunc_log_cursor
+FETCH NEXT FROM trunc_log_cursor INTO @dbname
+ 
+WHILE @@FETCH_STATUS = 0
+BEGIN
+SET @cmd = 'BACKUP LOG ' + @dbname + ' WITH TRUNCATE_ONLY'
+EXEC(@cmd)
+PRINT @dbname
+FETCH NEXT FROM trunc_log_cursor INTO @dbname
+END
+CLOSE trunc_log_cursor
+DEALLOCATE trunc_log_cursor
+
+------------------------ 
+
+-- shrink log for each user db
+ 
+USE master
+GO
+DECLARE @logname varchar(128), @cmd varchar(1000), @dbname varchar(128)
+ 
+DECLARE shrink_log_cursor CURSOR FOR
+select name from sysaltfiles where fileid = 2 and dbid > 5
+DECLARE db_name_cursor CURSOR FOR
+select sysdatabases.name from sysdatabases inner join sysaltfiles on sysdatabases.dbid = sysaltfiles.dbid and sysaltfiles.fileid = 2 and sysaltfiles.dbid > 5
+ 
+OPEN shrink_log_cursor
+OPEN db_name_cursor
+FETCH NEXT FROM shrink_log_cursor INTO @logname
+FETCH NEXT FROM db_name_cursor INTO @dbname
+ 
+WHILE @@FETCH_STATUS = 0
+BEGIN
+SET @cmd = 'USE ' + @dbname + CHAR(13) + 'DBCC SHRINKFILE(' + @logname + ',100) WITH NO_INFOMSGS'
+EXEC(@cmd)
+PRINT @dbname
+FETCH NEXT FROM shrink_log_cursor INTO @logname
+FETCH NEXT FROM db_name_cursor INTO @dbname
+END
+CLOSE shrink_log_cursor
+CLOSE db_name_cursor
+DEALLOCATE shrink_log_cursor
+DEALLOCATE db_name_cursor
+
+------------------------ 
+
+###/SQL SERVER###
+
+###Greenplum###
+
+--General
+
+select current_database();
+SELECT current_schema();
+SHOW search_path;	--To see the schema search path
+ALTER DATABASE SET search_path TO myschema, public, pg_catalog;		--To set the search path for a database
+
+gpcheckcat  -- check database level for meta data inconsistancies 
+gprecoverseg -- primary mirror segment offline to online
+psql -c "show all;" > /tmp/show_all.out   -- show all params
+gpconfig -s "gp_vmem_protect_limit"   -- show memory settings on master and segments
+gpstop -af 
+gpstop -u -- refresh
+
+"select * from pg_activitystat"
+
+***Find Orphaned Processes***
+
+1) Find a lock on a segment: select * from pg_stat_activity on master for the statement that is waiting; ( get sess_id)
+2) gpssh -f host_file /usr/ucb/ps auxwww |grep waiting (find waiting processes on segments)
+3) select * from gp_configuration where content='segment_id' (where segment_id is seg# from the ps output) (identifies port and segment)
+4) PGOPTIONS="-c gp_session_role=utility" psql -h sdw3-2 -p 50002 -d template1 (connect to segment with wait)
+5) select * from pg_locks where granted = 'f' (this will show the statement that is waiting for sess_id == mppsessionid
+6) look for locktype (which is a 'relation')
+7) select relation from pg_locks where granted = 'f';
+8) select * from pg_locks where relation='id' (where id = relation number)
+9) select mppsessionid from pg_locks where relation='id';
+10) The above will give you two session that are holding lock on the table and their status
+11) make note of the mppsessionid # 
+12) select * from pg_stat_activity; (on master looking for mppsessionid)
+13) If orphan, no entry exists on master
+14) gpssh -f all_hosts
+15) /usr/ucb/ps auxwww |grep [mppsessionid]
+16) identify PIDs and segments
+17) on the segment, kill pid
+
+***/Find Orphaned Processes***
+
+Find dupes or distinct without using distinct (for large row sets): 
+SELECT count(*) FROM (SELECT t.airlineid, t.flightnum, row_number() OVER (PARTITION BY t.airlineid, t.flightnum) AS rowno FROM trans_flights t) AS t_scan WHERE t_scan.rowno = 1;
+
+***Memory Setting***
+
+Physical and swap memory in the nodes (“conservative” settings to avoid swapping)
+For 3.x, gp_vmem_protect_limit memory / (primary segments per node + mirror segments per node)
+For 4.x, gp_vmem_protect_limit memory / (primary segments per node)
+If swap > memory, you can increase the gp_vmem_protect_limit by up to 1.5X, but risk swapping
+
+*Solaris* 
+ZFS ARC system tuning param
+
+Test Lab IP Addresses
+10.241.164.252
+10.241.164.254
+
+***FTP Site***
+Please upload to dcdftp.emc.com with username=anonymous ,password=<your email address>.
+And please tell us the file name you uploaded, and the exact version of the GP system(3 and 4).
+
+***OMREPORT***
+omconfig chassis leds -?
+omconfig chassis leds led=identify flash=on
+omreport system esmlog
+ompreort system alertlog 
+
+***Error Log***
+Check the master log file for WARNING, ERROR, FATAL or PANIC log level messages:
+1. $ gplogfilter -t
+2. Using gpssh, check for WARNING, ERROR, FATAL or PANIC log level messages on each segment instance: 
+   $ gpssh -f seg_hosts_file -e 'source /usr/local/greenplum-db/greenplum_path.sh ; gplogfilter -t /gpdata/*/pg_log/gpdb*.log' > seglog.out
+   $ gpssh -f hostfile -e 'source /usr/local/greenplum-db/greenplum_path.sh; gplogfilter -t /data*/*/gpseg*/pg_log/gpdb*.*' > seglog.out
+
+-- find bad or down segment servers
+
+select * from gp_segment_configuration where status != 'u';
+
+gpcheckcat  - check database level for meta data inconsistancies 
+gprecoverseg - primary mirror segment offline to online
+gpstop -af
+select * from pg_activitystat
+
+***Finding Locks***
+
+--find locks (original version)
+
+select row_number() over (partition by relation) rn, c.relname objname, pgl.granted,pgsa.*,mode
+  from pg_locks pgl, pg_stat_activity pgsa,pg_class c
+where pgl.pid=pgsa.procpid and
+       locktype='relation' and
+       c.oid=pgl.relation  and
+       relation in (select relation from pg_locks where granted='f')
+order by relation,rn;
+
+--find locks (videa's version)
+
+SELECT t.schemaname || '.' || t.relname AS tbl_name,
+       w.procpid       AS w_pid,
+       w.usename       AS w_user,
+       l1.locktype AS w_lock,
+       l1.mode AS w_mode,
+       w.current_query::varchar(32) AS wait_stmt_begins,
+       l.procpid       AS l_pid,
+       l.usename       AS l_user,
+       l2.locktype AS l_lock,
+       l2.mode AS l_mode,
+       l.current_query:: varchar(32) AS lock_stmt_begins
+FROM   pg_stat_activity w
+       INNER JOIN pg_locks l1 ON w.procpid = l1.pid AND NOT l1.granted
+       INNER JOIN pg_locks l2 ON l1.relation = l2.relation AND l2.granted
+       INNER JOIN pg_stat_activity l ON l2.pid = l.procpid
+       INNER JOIN pg_stat_user_tables t ON l1.relation = t.relid
+WHERE  w.waiting;
+
+--find locks (videa's cleaned up version missing AccessShareLock)
+
+select row_number() over (partition by relation) rn, pgl.relation, pgc.relname LockedOn, pgsa.*
+  from pg_locks pgl, pg_stat_activity pgsa, pg_class pgc
+where pgl.pid=pgsa.procpid and                    
+       pgl.relation = pgc.oid and
+       mode = 'ExclusiveLock' and
+       relation in (select distinct relation from pg_locks)
+order by relation,rn
+
+
+###/Greenplum###
+
+###PostgreSQL###
+
+start/stop: /init.d/postgresql start or pg_ctl -D /var/lib/data -p /user/bin/postmaster -l logfile start &
+
+create database: createdb <db>
+connect to database psql <db>
+
+destroydb <blah> -- shell layer
+dropdb <blah>  -- shell layer
+DROP DATABASE <blah>  -- sql layer
+CREATE DATABASE <blah>  -- sql layer
+
+default administrative table: template1 
+security file in data directory pg_hba.conf
+configuration file in data directory: postgresql.conf
+
+shared buffer cache (shared_buffers in postgresql.conf)
+write ahead log (checkpoint_segments = 3 default...16 mb in size.../data/pg_xlog)  
+wal_buffers sets number of buffers
+sort cache (sort_mem in postgresql.conf)
+OS cache
+fsync
+random_page_cost index/table scan choices
+vacuum_mem - memory allocated to vacuum
+max_fsm_pages - data page free size
+
+8 kb block size
+clustered index not sorted data and index at leaf level in b-tree
+
+pg_dump
+pg_dumpall
+vacuumdb 
+pg_ctl reload (force checkpoint)
+select * from pg_user;
+
+-- kill idle users
+
+select 'kill '|| procpid kill_cmd from pg_stat_activity
+where now() - query_start > interval '12 hours'
+and current_query = '<IDLE>'
+and usename = 'REPORTING_USER'
+
+-- get detailed index information
+select * from pgstatindex('athena.jobs_active_idx');  
+
+-- get estimate on row size
+SELECT relname, relpages*8192/reltuples as row_size from pg_class where
+reltuples <> 0 and relname not like 'pg%'; 
+
+-- get detailed table information on size
+select 'athena.jobs' as table_name, table_len / tuple_count from pgstattuple('"athena"."jobs"'); 
+
+-- sql to create autovacuum script for tables not autovacuumed
+select 'vacuum analyze ' || schemaname ||'.'|| relname || ';' from pg_stat_all_tables 
+where last_vacuum is null and last_autovacuum is null 
+and schemaname not like 'pg_%' and schemaname not like 'information_schema';
+
+--- function loop for creating rows
+
+CREATE FUNCTION createRows() RETURNS VOID AS $$
+DECLARE id bigint = 100;
+DECLARE type int = 1;
+BEGIN
+WHILE id < 50000000 LOOP
+	WHILE type <= 10 LOOP
+		insert into test.CallBackParams (jobId,callbackParamType,callbackDetail )values (id, type, '{"menu": {"id":"file","value":"File","popup":{"menuitem":[{"value":"New","onclick":"CreateNewDoc()"},{"value":"Open","onclick":"OpenDoc()"},{"value":"Close","onclick":"CloseDoc()"}]}}}');
+		id := id + 1;
+		type := type + 1;
+	END LOOP;
+	type := 1;
+END LOOP;		
+RETURN;
+END;
+$$
+LANGUAGE plpgsql;
+
+-- get row size
+
+SELECT pgcat.nspname, pgclass.relname as class, pgclass.relpages*8192/reltuples as size
+from pg_class pgclass
+join pg_catalog.pg_namespace pgcat on pgcat.oid = pgclass.relnamespace
+where pgclass.reltuples <> 0 and pgcat.nspname = 'test'
+
+---
+-- if not exists create or check if exists using inline do and end calls
+do $$
+begin
+if not exists (
+	select 1
+	from pg_class pgc
+	join pg_namespace pgn 
+	on pgn.oid = pgc.relnamespace
+	where pgc.relname = 'your_index_name'
+	and pgn.nspname = 'your_schema_name'
+	) then
+	create index jobstatushistory_jobid_idx on athena.jobstatushistory using btree (jobid);
+end if;
+end$$;
+
+-- execute function Matt Lyles code
+
+CREATE OR REPLACE FUNCTION execute(TEXT) RETURNS VOID AS $$
+BEGIN EXECUTE $1; END;
+$$ LANGUAGE plpgsql STRICT;
+
+-- check role exists function
+
+CREATE OR REPLACE FUNCTION role_exists(TEXT) RETURNS bool as $$
+SELECT exists(SELECT 1 FROM pg_catalog.pg_user where usename = $1);
+$$ language sql STRICT;
+
+-- check remaining connections function
+
+CREATE OR REPLACE FUNCTION check_remaining_connections() RETURNS SMALLINT LANGUAGE plpgsql AS $$
+
+DECLARE
+                CurrentConnections                       INTEGER;
+                MaximumConnections                  INTEGER;
+                RemainingConnections                 INTEGER;
+                WarningRemainingConnections                INTEGER = 20;
+                CriticalRemainingConnections    INTEGER = 10;
+                Status                                                   SMALLINT;
+
+BEGIN
+
+                SELECT INTO CurrentConnections COUNT(*)
+                FROM pg_stat_activity;
+
+                SELECT INTO MaximumConnections setting
+                FROM pg_settings
+                WHERE name = 'max_connections';
+
+                SELECT INTO RemainingConnections MaximumConnections - CurrentConnections;
+
+                SELECT INTO Status CASE
+                                WHEN RemainingConnections <= CriticalRemainingConnections THEN 0
+                                WHEN RemainingConnections <= WarningRemainingConnections THEN 1
+                                ELSE 2
+                                END;
+
+                RETURN Status;
+
+END
+$$;
+
+
+***PSQL***
+
+#Basics#
+\?   -- help on psql meta-commands
+\h   -- help on SQL command syntax
+\q   -- quit or exit psql
+\e   -- bring up editor
+\r    -- reset command buffer
+#Databases#
+\l -- show all databases 
+\c db_name -- connect to database
+#Schemas#
+\dn  -- To see a list of all schemas in the database
+#Tables#
+\d    -- describe table
+\dt   -- To list tables in the database
+\d+   -- table_name To see structure of a table
+\dtS  --To list system catalog tables
+\dx   -- To list external tables only
+\d table_name  -- To see the distribution key columns of a table
+\dv   -- show views
+#Indexes#
+\di  -- To list all indexes while in psql
+\d+ index_name  -- To see an index definition \d+ index_name 
+#Sequences#
+\ds    -- To list all sequences \ds
+\d+ sequence_name   --To see an sequence definition
+#Roles#
+\dg  -- show groups (i.e. roles)
+\du -- show users (i.e. roles)
+#I am lost#
+\conninfo   -- connected to database "postgres" as user "postgres" via socket in "/var/run/postgresql" at port "5432".
+\echo `hostname`	-- gives hostname
+
+***/PSQL***
+
+-- drop cluster
+/usr/bin/pg_dropcluster --stop 9.2 main
+
+-- create cluster utf8
+/usr/bin/pg_createcluster --start -e UTF-8 9.2 main
+
+-- system schemas
+system schemas pg_catalog, information_schema, pg_toast, pg_bitmapindex, pg_aoseg    
+
+-- find last time schema was analyzed
+
+select * from pg_stat_operations
+where schemaname='SCHEMA NAME'
+and actionname ='ANALYZE'
+order by statime;
+
+-- find last time schema was analyzed
+
+CREATE OR REPLACE VIEW <schema_or_public>.table_maintenance_history AS 
+SELECT n.nspname AS "schema", c.relname AS "table",
+    o.stausename AS "user_name",
+    o.staactionname AS "action",
+    to_char(o.statime, 'MM/DD/YY HH24:MM:SS') AS "action_date"
+   FROM pg_catalog.pg_class c
+   INNER JOIN pg_catalog.pg_stat_last_operation o on o.objid = c.oid AND o.staactionname = ANY (ARRAY['ANALYZE'::"name", 'VACUUM'::"name"])
+   INNER JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace AND n.nspname <> 'pg_catalog'::name AND n.nspname <> 'gp_toolkit'::name AND n.nspname !~ '^pg_toast'::text AND n.nspname::text <> 'information_schema'::text
+  WHERE c.relname !~~ 'pg_%'::text AND c.relname !~~ '%_prt_%'::text AND c.relname !~~ 'gp_%'::text AND c.relkind = 'r'
+  ORDER BY n.nspname, c.relname, o.statime desc;
+
+-- find schema ddl history
+
+CREATE OR REPLACE <schema_or_public>.table_ddl_history AS 
+SELECT n.nspname AS "schema", c.relname AS "object",
+    CASE c.relkind
+        WHEN 'r'::"char" THEN 'table'::text
+        WHEN 'v'::"char" THEN 'view'::text
+        WHEN 'i'::"char" THEN 'index'::text
+        ELSE NULL::text
+   END AS "type",     -- t, v, or i
+    o.stausename AS "user_name",
+    o.staactionname || ' ' || o.stasubtype AS "action",
+    to_char(o.statime, 'MM/DD/YY HH24:MM:SS') AS "action_date"
+   FROM pg_catalog.pg_class c
+   INNER JOIN pg_catalog.pg_stat_last_operation o on o.objid = c.oid AND o.staactionname = ANY (ARRAY['ALTER'::"name", 'CREATE'::"name", 'PRIVILEGE'::"name"])
+   INNER JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace AND n.nspname <> 'pg_catalog'::name AND n.nspname <> 'gp_toolkit'::name AND n.nspname !~ '^pg_toast'::text AND n.nspname::text <> 'information_schema'::text
+  WHERE c.relname !~~ 'pg_%'::text AND c.relname !~~ '%_prt_%'::text AND c.relname !~~ 'gp_%'::text AND (c.relkind = ANY (ARRAY['r'::"char", 'v'::"char", 'i'::"char", ''::"char"]))
+  ORDER BY n.nspname, c.relname, o.statime desc;
+
+-- find locks find postgres locks find pg locks
+
+select row_number() over (partition by relation) rn, pgl.relation, pgc.relname LockedOn, pgsa.*
+  from pg_locks pgl, pg_stat_activity pgsa, pg_class pgc
+where pgl.pid = pgsa.pid and                    
+       pgl.relation = pgc.oid and
+       pgl.mode = 'ExclusiveLock' and
+       relation in (select distinct relation from pg_locks)
+order by relation,rn
+
+select row_number() over (partition by relation) rn, pgl.relation, pgc.relname LockedOn, pgsa.*
+  from pg_locks pgl, pg_stat_activity pgsa, pg_class pgc
+where pgl.pid = pgsa.pid and                    
+       pgl.relation = pgc.oid and
+       pgl.mode = 'AccessShareLock' and
+       relation in (select distinct relation from pg_locks)
+order by relation, rn
+
+-- Find dupes or distinct in large row sets without using distinct (distinct equals going over every row)
+SELECT count(*) FROM (SELECT t.airlineid, t.flightnum, row_number() OVER (PARTITION BY t.airlineid, t.flightnum) AS rowno FROM trans_flights t) AS t_scan WHERE t_scan.rowno = 1;
+
+---------------
+#!/bin/bash
+
+schema="hermes"
+#schema="athena"
+
+log_dir="/home/postgres/logs/"
+pg_log="postgresql.log"
+mod_log="postgres_mod.log"
+out_dir="/home/postgres/output/"
+duration="all_duration_data.txt"
+
+if [ ! -d $log_dir ]
+then
+     	echo "Can't find log directory called $log_dir, or the directory $log_dir is not a readable directory"
+       	exit 1
+fi
+
+if [ ! -f $log_dir$pg_log ] 
+then
+       	echo "Can't find postgres log file called $pg_log, or the  file $pg_log is not a readable file"
+       	exit 1
+fi
+
+grep -F -i execute $log_dir$pg_log > $log_dir$mod_log
+echo "finished grep of $pg_log and created modified $mod_log for schema $schema"
+
+if [ ! -f $log_dir$mod_log ] 
+then
+       	echo "Can't find modified postgres log file called $mod_log, or the  file $mod_log is not a readable file"
+       	exit 1
+fi
+
+if [ $schema = "hermes" ]
+then
+        echo "processing $schema schema"
+        out_dir="/home/postgres/output/hermes_output/"
+        rm -f $out_dir*
+	duration="hermes_duration_data.txt"
+	hermes_statement="hermes_mod.log"
+	grep -i hermes $log_dir$mod_log > $log_dir$hermes_statement
+	echo "finished grep of modified $mod_log and created $hermes_statement"
+	mv $log_dir$hermes_statement $log_dir$mod_log
+	if [ ! -f $log_dir$mod_log ]
+	then
+        	echo "Can't find hermes log file called $hermes_statement, or the  file $hermes_statement is not a readable file"
+        	exit 1
+	fi
+fi
+
+if [ $schema = "athena" ]
+then
+        echo "processing $schema schema"
+	out_dir="/home/postgres/output/athena_output/"
+        rm -f $out_dir*
+        duration="athena_duration_data.txt"
+	athena_statement="athena_mod.log"
+	grep -i athena $log_dir$mod_log > $log_dir$athena_statement
+	echo "finished grep of modified $mod_log and created $athena_statement"
+	mv $log_dir$athena_statement $log_dir$mod_log
+	if [ ! -f $log_dir$mod_log ]
+	then
+        	echo "Can't find athena file called $athena_statement, or the  file $athena_statement is not a readable file"
+        	exit 1
+	fi
+fi
+
+if [ ! -d $out_dir ]
+then
+        echo "Can't find output directory called $out_dir, or the directory $out_dir is not a readable directory"
+        exit 1
+fi
+
+statement1="statement_1.txt"
+statement10="statement_10.txt"
+statement50="statement_50.txt"
+statement100="statement_100.txt"
+statement150="statement_150.txt"
+statement200="statement_200.txt"
+statement250="statement_250.txt"
+statement300="statement_300.txt"
+statement350="statement_350.txt"
+statement400="statement_400.txt"
+statement450="statement_450.txt"
+statement500="statement_500.txt"
+statement550="statement_550.txt"
+statement600="statement_600.txt"
+statement650="statement_650.txt"
+statement700="statement_700.txt"
+statement750="statement_750.txt"
+statement800="statement_800.txt"
+statement850="statement_850.txt"
+statement900="statement_900.txt"
+statement950="statement_950.txt"
+statement1000="statement_1000.txt"
+
+grep -i "duration: [1-9].*" $log_dir$mod_log > $out_dir$statement1
+echo "finished grep of modified $pg_log and created $statement1"
+grep -i "duration: [1-4][0-9].*" $log_dir$mod_log > $out_dir$statement10
+echo "finished grep of modified $pg_log and created $statement10"
+grep -i "duration: [5-9][0-9].*" $log_dir$mod_log > $out_dir$statement50
+echo "finished grep of modified $pg_log and created $statement50"
+grep -i "duration: [1][0-4][0-9].*" $log_dir$mod_log > $out_dir$statement100
+echo "finished grep of modified $pg_log and created $statement100"
+grep -i "duration: [1][5-9][0-9].*" $log_dir$mod_log > $out_dir$statement150
+echo "finished grep of modified $pg_log and created $statement150"
+grep -i "duration: [2][0-4][0-9].*" $log_dir$mod_log > $out_dir$statement200
+echo "finished grep of modified $pg_log and created $statement200"
+grep -i "duration: [2][5-9][0-9].*" $log_dir$mod_log > $out_dir$statement250
+echo "finished grep of modified $pg_log and created $statement250"
+grep -i "duration: [3][0-4][0-9].*" $log_dir$mod_log > $out_dir$statement300
+echo "finished grep of modified $pg_log and created $statement300"
+grep -i "duration: [3][5-9][0-9].*" $log_dir$mod_log > $out_dir$statement350
+echo "finished grep of modified $pg_log and created $statement350"
+grep -i "duration: [4][0-4][0-9].*" $log_dir$mod_log > $out_dir$statement400
+echo "finished grep of modified $pg_log and created $statement400"
+grep -i "duration: [4][5-9][0-9].*" $log_dir$mod_log > $out_dir$statement450
+echo "finished grep of modified $pg_log and created $statement450"
+grep -i "duration: [5][0-4][0-9].*" $log_dir$mod_log > $out_dir$statement500
+echo "finished grep of modified $pg_log and created $statement500"
+grep -i "duration: [5][5-9][0-9].*" $log_dir$mod_log > $out_dir$statement550
+echo "finished grep of modified $pg_log and created $statement550"
+grep -i "duration: [6][0-4][0-9].*" $log_dir$mod_log > $out_dir$statement600
+echo "finished grep of modified $pg_log and created $statement600"
+grep -i "duration: [6][5-9][0-9].*" $log_dir$mod_log > $out_dir$statement650
+echo "finished grep of modified $pg_log and created $statement650"
+grep -i "duration: [7][0-4][0-9].*" $log_dir$mod_log > $out_dir$statement700
+echo "finished grep of modified $pg_log and created $statement700"
+grep -i "duration: [7][5-9][0-9].*" $log_dir$mod_log > $out_dir$statement750
+echo "finished grep of modified $pg_log and created $statement750"
+grep -i "duration: [8][0-4][0-9].*" $log_dir$mod_log > $out_dir$statement800
+echo "finished grep of modified $pg_log and created $statement800"
+grep -i "duration: [8][5-9][0-9].*" $log_dir$mod_log > $out_dir$statement850
+echo "finished grep of modified $pg_log and created $statement850"
+grep -i "duration: [9][0-4][0-9].*" $log_dir$mod_log > $out_dir$statement900
+echo "finished grep of modified $pg_log and created $statement900"
+grep -i "duration: [9][5-9][0-9].*" $log_dir$mod_log > $out_dir$statement950
+echo "finished grep of modified $pg_log and created $statement950"
+grep -i "duration: [1-9][0-9][0-9][0-9].*" $log_dir$mod_log > $out_dir$statement1000
+echo "finished grep of modified $pg_log and created $statement1000"
+
+e1=$(cat $out_dir$statement1 | wc -l)
+e10=$(cat $out_dir$statement10 | wc -l)
+e50=$(cat $out_dir$statement50 | wc -l)
+e100=$(cat $out_dir$statement100 | wc -l)
+e150=$(cat $out_dir$statement150 | wc -l)
+e200=$(cat $out_dir$statement200 | wc -l)
+e250=$(cat $out_dir$statement250 | wc -l)
+e300=$(cat $out_dir$statement300 | wc -l)
+e350=$(cat $out_dir$statement350 | wc -l)
+e400=$(cat $out_dir$statement400 | wc -l)
+e450=$(cat $out_dir$statement450 | wc -l)
+e550=$(cat $out_dir$statement550 | wc -l)
+e500=$(cat $out_dir$statement500 | wc -l)
+e600=$(cat $out_dir$statement600 | wc -l)
+e650=$(cat $out_dir$statement650 | wc -l)
+e700=$(cat $out_dir$statement700 | wc -l)
+e750=$(cat $out_dir$statement750 | wc -l)
+e800=$(cat $out_dir$statement800 | wc -l)
+e850=$(cat $out_dir$statement850 | wc -l)
+e900=$(cat $out_dir$statement900 | wc -l)
+e950=$(cat $out_dir$statement950 | wc -l)
+e1000=$(cat $out_dir$statement1000 | wc -l)
+
+echo "processing $schema unique queries"
+
+find $out_dir -type f -empty -delete
+
+total=$out_dir$schema"_unique_query.txt"
+
+for file in $out_dir*
+do
+        mod=$file".mod"
+        cp $file $mod
+        sed -i 's/[0-9].*<unnamed>:.//' $mod
+        sort -u $mod > $mod%%
+        mv $mod%% $mod
+        cat $mod >> $total
+	rm $mod
+done
+
+sort -u $total > $total%%
+mv $total%% $total
+
+echo "1|"$e1 > $out_dir$duration
+echo "10|"$e10 >> $out_dir$duration
+echo "50|"$e50 >> $out_dir$duration
+echo "100|"$e100 >> $out_dir$duration
+echo "150|"$e150 >> $out_dir$duration
+echo "200|"$e200 >> $out_dir$duration
+echo "250|"$e250 > $out_dir$duration
+echo "300|"$e300 >> $out_dir$duration
+echo "350|"$e350 >> $out_dir$duration
+echo "400|"$e400 >> $out_dir$duration
+echo "450|"$e450 >> $out_dir$duration
+echo "500|"$e500 >> $out_dir$duration
+echo "550|"$e550 >> $out_dir$duration
+echo "600|"$e600 >> $out_dir$duration
+echo "650|"$e650 >> $out_dir$duration
+echo "700|"$e700 >> $out_dir$duration
+echo "750|"$e750 >> $out_dir$duration
+echo "800|"$e800 >> $out_dir$duration
+echo "850|"$e850 >> $out_dir$duration
+echo "900|"$e900 >> $out_dir$duration
+echo "950|"$e950 >> $out_dir$duration
+echo "1000|"$e1000 >> $out_dir$duration
+
+echo ""
+echo "end of processing for "$schema
+echo "------------"
+echo "ms | DML statements"
+echo "------------"
+
+cat $out_dir$duration
+
+echo ""
+echo "end of processing $schema unique queries"
+echo "-----------------------"
+echo "queries | file location"
+echo "-----------------------"
+echo `wc -l $total`
+echo ""
+---------------
+
+cd /usr/share/postgresql/9.2/extension
+psql -d postgres
+CREATE EXTENSION "pg_buffercache";
+
+---------------
+
+-- Function: sequence_exists(text)
+
+CREATE OR REPLACE FUNCTION sequence_exists(text)
+RETURNS boolean AS
+$BODY$
+DECLARE schema text = split_part($1, '.', 1);
+DECLARE sequence text = split_part($1, '.', 2);
+BEGIN
+	return exists (select 1 from information_schema.sequences where sequence_schema = lower(schema) and sequence_name = lower(sequence));
+END;
+$BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100;
+ALTER FUNCTION sequence_exists(text)
+OWNER TO liquibase;
+
+---------------
+
+-- Sequence: hermes.jobs_id_seq
+
+select execute($$CREATE SEQUENCE hermes.jobs_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 9223372036854775807 START 1 CACHE 1000$$) where not sequence_exists('hermes.jobs_id_seq');
+ALTER SEQUENCE IF EXISTS hermes.jobs_id_seq OWNER TO hermes;
+GRANT ALL ON TABLE hermes.jobs_id_seq TO liquibase;
+GRANT UPDATE ON TABLE hermes.jobs_id_seq TO athena;
+
+---------------
+
+CREATE OR REPLACE FUNCTION execute(TEXT) RETURNS VOID AS $$
+BEGIN EXECUTE $1; END;
+$$ LANGUAGE plpgsql STRICT;
+
+---------------
+
+###/PostgreSQL###
+
+###General###
+
+don't think of "for loops" (for each row of data... do xyz); think of "sets" of data (set of data from a and b where a.2 = b.2)
+greater than 10-20% of table data then table scan (depends on the db platform)
+triggers are dangerous due to "under the covers" nature of actions performed and row by row execution instead of set based execution
+don't store ip address as strings...store as int
+
+***Code Optimization***
+
+1. Avoid using cursors (as well as other looping structures) as much as possible. Cursors are inefficient, and database engines usually don't have the best loop implementations in terms of performance.
+You can usually replace code involving cursors with aggregate SQL statements (SELECT, INSERT, and UPDATE) that use vector tables. All database engines are heavily optimized for aggregate statements, so even if a loop is unavoidable, it is always better to execute a few aggregate statements in a loop with a small number of iterations, than to create a cursor and execute simple statements over a large number of iterations.
+Even if initial performance tests, especially with a small amount of data, show cursors to be more efficient than a complex aggregate statement, it is worthwhile to try to optimize the operation by breaking it into smaller portions or using other approaches—unless you can guarantee that the data value will stay small. Cursor approaches do not and will not scale.
+2. Filter data wisely. One alternative to using cursors uses a fall-through approach, filtering and aggregating data in multiple steps via a set of data storages, which could be physical tables, temporary tables, or table variables. It is usually best to include some aggregate filters into aggregate statements to filter out the majority of data in one simple shot whenever necessary, working on smaller amounts of data. Then you can proceed with joining and filtering, making sure to keep the number of join permutations under control at all times.
+3. It is usually more efficient to execute multiple statements with one condition than a single statement with multiple OR conditions when executing UPDATE and DELETE statements against permanent database tables that can be accessed by multiple users simultaneously. This tip is especially important from the scalability point of view; from the performance point of view the difference is usually marginal. The major reason for the tip is the locking of the database records and the lock escalations that occur behind the scenes.
+4. Make distinctions between temp tables and table variables. Table variables are in-memory structures that may work from 2-100 times faster than temp tables. But keep in mind that access to table variables gets slower as the volume of data they contain grows. At some point, table variables will overflow the available memory and that kills the performance. Therefore, use table variables only when their data content is guaranteed not to grow unpredictably; the breaking size is around several thousand records. For larger data volumes, I recommend temp tables with clustered indexes. Interestingly, I've found that a temp table with one clustered index is often faster than having multiple simple indexes. In contrast, multiple simple indexes with physical tables are often faster than one clustered index.
+5. Make careful distinctions between hard rules and assumptions. This is more of a business design tip, which applies more to code design than to performance and scalability design in general. In real life however, performance and scalability are generally the first things to suffer from improper design. When rules are implemented as assumptions, they usually cause unnecessary calculations to be performed, affecting performance. However, when assumptions are implemented as rules they tend to cause errors and algorithm failures, which usually requires an urgent redesign. That, in turn, is usually performed with business constraints and results in inefficient final algorithms. That's because bad design decisions are often corrected in a rush and without sufficient resources—sometimes under pressure from customers whose businesses are usually in a critical stage when problems are uncovered, but must continue operating during the process.
+6. Pay attention to join order. Using proper join order sometimes lets the database engine generate hints that execute joins with an optimal amount of records. Most database engines also support hard hints, but in most cases you should avoid using hard hints and let the database engine figure out the best way to do its job on its own.
+7. Be careful when joining complex views to other views and database tables in complex SELECT statements. When the database contains a significant amount of data, Database engine tends to recalculate the execution plan of the resulting statement, which often results in an inefficient execution plan and may kill the performance. The most difficult part is that the behavior of the db engine is inconsistent in that respect, and heavily depends on the database size, indexes, foreign keys, and other database structures and constraints. The consistent work-around is to pre-select data from the view into a temp table with the reasonable pre-filters, and then use that temp table in place of the underlying view.
+8. Create indexes on temp tables wisely. As mentioned in Tip 4, clustered indexes are usually the best in terms of performance for temp tables; however, there is a difference between creating the index before or after inserting data into the temp table. Creating the index before the insert complicates the insert, because the database engine must order the selection. For complex selections such as those mentioned in Tip 7, the extra ordering may overcomplicate the overall statement and drastically degrade the performance. On the other hand, creating the index after the insert forces the database engine to recalculate the execution plan of the stored procedure every time it is called. Therefore, the decision is always a trade-off and you should make it based on the relative costs of the two possibilities.
+9. Try to avoid execution plan recalculation. One common cause of recalculation occurs when the stored procedure contains several paths that depend on values passed in parameters. However, whether avoiding recalculation is possible depends on the complexity of the stored procedure and on other circumstances, such as those described in tip 8. When the engine does recalculate execution, performance always suffers; however, recalculating the execution plan of the caller does not force the execution plan recalculation of the called procedure (or view or function). Therefore, the workaround is to divide one stored procedure into multiple procedures (depending on the passed-in parameters), and then call the children from the parent conditionally. You should perform this subdivision very carefully though, because it can be a maintenance nightmare—but sometimes it seems to be the only way to achieve acceptable database performance and scalability.
+10. Format your stored procedure scripts legibly and agree on common practices such as clause order and formatting rules in advance as it will help avoid errors. It also clearly shows the logical structure of the statements and often aids in figuring out faulty filters and joins.
+
+***/Code Optimization***
+
+***database operations support questions***
+how fast will application grow?
+will application shrink/cleanup?
+how much write/read i/o with it do at load, query, and backup time
+what is an acceptable response time
+what is the extected reliability
+when is the maintenance window
+what monitoring exists
+what is the backup/restore policy; is it automated?
+***/database operations support questions***
+
+***database operations support notes***
+no end user use of application logins
+use of security groups with individuals assigned to groups
+db check scripts
+db size scripts
+automated backup/restore scripts 
+db performance monitoring scripts
+consistant build processes
+consistant service pack/patch levels
+packaged code deployments
+consistant management tools
+documented and repeatable processes and procedures
+***/database operations support notes***
+
+***Data Archival***
+1) What we need to save?
+2) How long we need to save it?
+3) How long a recovery interval can we tolerate?
+4) What is the system state during recovery?
+4) What costs (achival storage location/recovery instances/commercial backup licenses) are associated with the various recovery methods?
+5) What are the performance impacts during archiving?
+6) How often are backups restored to check backup validity and process?
+
+***MySQL Naming Conventions***
+
+Inside of each MySQL instance, all user objects should be created in user databases, and all user related data should be stored in those objects.
+With each MySQL instance, there is also a system database called “mysql”. Although it may be possible to create user objects in that database depending on a db user's permissions, this should *always* be avoided.
+User databases should use names that are specific to the application. The standard convention is to use all lower case for the database name (example: create database if not exists mealticket;).
+The reserved word "schema" in MySQL is synonymous with the term "database". Other RDBMS like Oracle, PostgreSQL, and SQL Server, all implement the word "schema" and "database" differently. For consistency, do not use the term "schema" with MySQL.
+Inside of a user database, all table level objects should be created using lower case with underscores as needed for readability. These objects types include tables, views, columns, functions, indexes, constraints, cursors, and triggers.
+Create all table level objects with their corresponding database name in line, separated with a period. This guarantees an object is created in the correct database every time (example: create table if not exists mealticket.product_catalog).
+Tables, column names, and views should be named as nouns, and not verbs or noun/verb combinations.
+Stored procedures, functionsm and triggers should be named as verb/noun combinations. The verbs should have prefixes reflective of their action (examples: add_job_status, get_job_status, update_job_status).
+The following database objects should have the following suffixes applied to them:
+
+	_pk for a primary key
+	_fk  for a foreign key
+	_idx  for an index
+	_fun for a function
+	_prc for a procedure
+	_chk  for a named check constraint
+	_unq  for a named unique constraint
+	_csr  for a cursor
+	_v for a view
+	_mv for a materialized view
+	_trg for a trigger
+
+***/MySQL Naming Conventions***
+
+***PostgreSQL Naming Conventions***
+
+Avoid using quotes, hyphens, and underscores in Postgres database object names. Quotation use in particular, is for a specific set of circumstances detailed in the next section
+When a database object needs to use a reserved word as a name, the object is a number, or the object has reserved characters in it, only then are quotes needed and to be used.
+Inside of each Postgres instance, there is a database called “postgres”. Although it may be possible to create user objects in that database, this should be avoided as a rule.
+When a project is started, a new user database inside the Postgres instance should be created.
+The new user database should use a name that is specific to the application, and the convention is to use all lower case for the database name (example: etlq).
+Inside each database in Postgres there is a schema called public. The public schema should not be used to store user objects. Only user defined schemas should be used for that purpose.
+User schemas should be created to reflect the different logical areas of the application. These schema names should be use lower case (example: athena). The use of multiple user schemas allows for better data organization, user security, and programming flexibility.
+Inside of a user schema, all table level objects should be created using Upper Camel case (example: JobStatus). These objects types include tables and views.
+Create all table level objects with their corresponding schema name in line (example: athena.JobStatus).  This guarantees an object is created in the correct schema every time.
+Table and view objects should be named as nouns, and not verbs, or noun/verb combinations
+Below the table object level, use Lower Camel case as a convention (example: securityId). Objects at this level include columns, functions, indexes, constraints, cursors, and triggers.
+Functions and triggers should be named as verb/noun combinations. The verbs should have prefixes reflective of their action (examples: addJob, getJobStatus, updateJobStatus, removeJob)
+With the exception of databases, schemas, tables, and functions, database objects should have the following suffixes applied to them:
+
+    _pk for a primary key
+    _fk  for a foreign key
+    _idx  for an index
+    _fun for a function
+    _prc for a procedure
+    _chk  for a named check constraint
+    _unq  for a named unique constraint
+    _csr  for a cursor
+    _v for a view
+    _mv for a materialized view
+    _trg for a trigger
+
+***/PostgreSQL Naming Conventions***
+
+###/General###
+
+EOF

@@ -1,0 +1,216 @@
+Current Version 08.30.13
+Started Version 09.14.07
+
+***NetApp Benchmarking***
+
+benchmark I/O latency at peak load (< 20 milliseconds)
+benchmark I/O latency at basal performance (< 5 milliseconds)
+
+NFS latency for all NFS v3 operations
+NFS latency for NFS v3 read operations
+NFS latency for NFS v3 write operations
+
+CIFS latency for all CIFS operations
+iSCSI latency for iSCSI read operations
+iSCSI latency for iSCSI write operations
+
+sysstat
+
+CPU Total Net kB/s Disk kB/s Tape kB/s Cache Cache CP CP Disk
+
+cpu (<80%)
+
+network packets dropped
+network packets received
+network packets sent
+
+error messages
+failover testing
+
+storage available currently
+storage growth path
+
+NFS versions
+NFS errors
+
+backend network segregation
+
+Overloaded CPU
+Overloaded Disk
+Overloaded Loop
+Overloaded NIC or HBA
+
+***/Benchmarking***
+
+***NETAPP***
+
+sysstat 15
+syconfig -a
+syconfig -A
+
+-- /etc/fstab mount entry for filer
+prod-nas02.prod.bigfishgames.com:/vol/db_data2/rpt-db2  /mnt/database/db_data   nfs     rw,fg,vers=3,tcp,rsize=32768,wsize=32768        0       0
+prod-nas02.prod.bigfishgames.com:/vol/db_tlogs2/rpt-db2 /mnt/database/db_tlogs  nfs     rw,fg,vers=3,tcp,rsize=32768,wsize=32768        0       0
+
+netapp-6> col
+netapp-6> priv set advanced
+netapp-6> led_on 2a.49
+netapp-6> led_on 2a.57
+netapp-6> led_off 2a.49
+netapp-6> led_off 2a.57
+light Disks on either side of disk if led is broken
+
+NetApp Rules of Thumb
+
+1. Be sure that loop lengths are not more than 3 feet
+2. Additional speeds can be achieved by eliminating dual parity but at some risk as only single drive failure at a time can be tolerated by an array.
+3. Don’t mix raid group sizes.
+4. Check to see that you are using multi-path I/O with each server having both HBAs active to the filer.
+4. Run the NetApp WAFL defrag utility every 90 days to check the defrag level 
+5. When NetApp WAFL fragmentation level gets above 3 defrag should be run.
+
+http://now.netapp.com
+user: jnoetzelman
+password: BigFishYYY
+
+
+***/NETAPP***
+
+***Dell Hardware***
+
+#!/bin/bash
+#
+# Actions performed by this script: This script will run all the omreport commands
+#                                   Outputs PASSED/FAILED for some tests
+#                                   More complex output is archived (tar) into one file
+#                                   compresses (gzips) tar file
+#                                   Place on /tmp/omreport.tar.gz
+#
+# Author: Marc Smith
+# Contact: marc_smith@emc.com
+# LAST DATE MODIFIED: 09/17/2010
+
+#BEGIN SCRIPT EXECUTION HERE:
+
+#Disks Tests:
+
+clear
+#Orig Command:
+#omreport storage controller | grep -e "^ID" -e "^Status"
+STORAGE_CONTROLLER_OK=`omreport storage controller | grep -e "^ID" -e "^Status" |awk '{print $3}' |tail -1`
+STATUS_OK="Ok"
+
+if [ $STORAGE_CONTROLLER_OK == $STATUS_OK ]; then
+   echo omreport storage controller test PASSED
+else
+   echo omreport storage controller test FAILED
+fi
+
+#Orig command:
+#omreport storage pdisk controller=0 | grep -e "^ID" -e "^State"
+echo output should show as Online > /tmp/omreportstoragepdisk.txt
+echo omreport storage pdisk controller=0 | grep  -e "^State"| awk '{print $3}' >> /tmp/omreportstoragepdisk.txt
+omreport storage pdisk controller=0 | grep  -e "^State"| awk '{print $3}' >> /tmp/omreportstoragepdisk.txt
+
+#Orig command:
+#omreport storage vdisk controller=0 | grep -e "^ID" -e "^State"
+STORAGE_CONTROLLER_VDISK_READY=`omreport storage vdisk controller=0 | grep  -e "^State" | awk '{print $3}' |uniq`
+IS_READY="Ready"
+if [ $STORAGE_CONTROLLER_VDISK_READY == $IS_READY ]; then
+      echo omreport storage vdisk controller=0 test PASSED
+else
+      echo omreport storage vdisk controller=0 test FAILED
+fi
+
+#Memory Tests:
+
+#Orig Command
+#omreport chassis memory | grep ^Health
+CHASSIS_MEM_OK=`omreport chassis memory | grep ^Health |awk '{print $3}'`
+if [ $CHASSIS_MEM_OK == $STATUS_OK ]; then
+   echo omreport chassis memory test PASSED
+else
+   echo omreport chassis memory test FAILED
+fi
+
+#Orig Command:
+#omreport chassis memory | grep -C 1 "Total Installed" | head -3
+CHASSIS_MEM=`omreport chassis memory | grep   "Value" |head -1 |awk '{print $3}'`
+MEM_49152="49152"
+if [ $CHASSIS_MEM == $MEM_49152 ]; then
+   echo omreport chassis memory test 49152 PASSED
+else
+   echo omreport chassis memory test 49152 FAILED
+fi
+
+#System Events:
+
+omreport system alertlog > /tmp/omreportalerts.txt
+omreport system esmlog > /tmp/omreportsys.txt
+omreport system postlog > /tmp/omreportpost.txt
+
+#Chassis commands:
+
+echo Chassis commands: >   /tmp/chasis.txt
+echo "***********************************" >> /tmp/chasis.txt
+echo cmd: omrepoot chassis biossetup  >> /tmp/chasis.txt
+echo >> /tmp/chasis.txt
+echo "***********************************" >> /tmp/chasis.txt
+omreport chassis biossetup  >> /tmp/chasis.txt
+omreport chassis firmware   >> /tmp/chasis.txt
+omreport chassis bios       >> /tmp/chasis.txt
+omreport chassis memory    >> /tmp/chasis.txt
+omreport chassis processors  >> /tmp/chasis.txt
+omreport chassis nics  >> /tmp/chasis.txt
+omreport chassis slots >> /tmp/chasis.txt
+
+#Orig Command:
+#omreport chassis pwrsupplies | grep -e "^Power Supply Redundancy" -e ^Index -e ^Status -e "^Online Status"
+POWER_STATUS=`omreport chassis pwrsupplies | grep   -e ^Status |uniq | awk '{print $3}'`
+if [ $POWER_STATUS == $STATUS_OK ]; then
+   echo omreport chassis pwrsupplies test PASSED
+else
+   echo omreport chassis pwrsupplies test FAILED
+fi
+
+omreport chassis temps >> /tmp/chasis.txt
+omreport chassis batteries >> /tmp/chasis.txt
+omreport chassis volts | grep -e ^Index -e ^Status -e ^Probe >> /tmp/chasis.txt
+omconfig chassis leds led=identify flash=on timeout=10 >> /tmp/chasis.txt
+omconfig chassis leds led=hdfault action=clear  >> /tmp/chasis.txt
+omreport chassis fans | grep -e Index -e Status >> /tmp/chasis.txt
+omreport chassis processors | grep -e Index -e Status >> /tmp/chasis.txt
+
+# TAR THE FILES, CLEANUP AND COMPRESS
+CURR_DIR=`pwd`
+cd /tmp
+tar -cf  /tmp/omreport.tar --remove-files  omreportstoragepdisk.txt omreportalerts.txt omreportsys.txt omreportpost.txt chasis.txt
+cd $CURR_DIR
+gzip -q -f /tmp/omreport.tar
+
+***/Dell Hardware***
+
+-- change filesystem to ext4 with partition
+
+fdisk /dev/xvda2
+---enter fdisk---
+list help
+add partition
+add partition number (2)
+use all available space
+set partition type to 83 (linux)
+list partition table
+verify partition table
+save partition table
+reboot
+---exit fdisk---
+mkdir /mnt/data01
+mkfs -text4 /dev/xvda2
+mount -text4 /dev/xvda2 /mnt/data01
+cp /etc/fstab /etc/fstab.orig
+vi /etc/fstab
+mount -a
+df -h
+
+EOF
+

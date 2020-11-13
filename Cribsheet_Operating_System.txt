@@ -1,0 +1,1389 @@
+Version 10.19.20
+Started 09.23.04
+
+Last Version before changing fields Version 10.21.14
+
+
+--------------------
+***UNIX***
+--------------------
+
+adduser --home /home/devin --shell /bin/bash --ingroup administrator devin
+usermod -a -G sudo devin			-- sudo visudo ubuntu way
+/sbin/dumpe2fs /dev/sda1 | grep -i -F 'Block size'		-- get block size for linux system , file system block size
+timeout 60 <command> 		-- run a command for given amount of time and stop
+/sbin/blockdev --getra  /dev/xvda1			-- get read ahead block size for linux file system
+/sbin/blockdev --setra 256 /dev/xvda1		-- set read ahead block size for linux file system
+hdparm -W1 /dev/sdb1		-- set write-caching to 1 (on) writecache write cache
+hdparm -W0 /dev/sdb1		-- set write-caching to 0 (off) writecache write cache
+hdparm -I /dev/sdb1			-- list block device (i.e. hard drive) details
+flush file system cache free pagecache: echo 1 > /proc/sys/vm/drop_caches
+free dentries and inodes: echo 2 > /proc/sys/vm/drop_caches
+free pagecache, dentries and inodes: echo 3 > /proc/sys/vm/drop_caches
+find . -type f -empty -delete		-- find empty files in directory and delete
+'echo Password | passwd gpadmin --stdin'  -- remote user passwd change via ssh as root
+pkill -- kills on processes and uses regular expressions
+pgrep -- process grep...just gets pids
+killall -- kills all processes related to a specific name 
+mpstat -P ALL		--list cpu performance including wait times
+lspci --traverse bus in order
+/usr/bin/find /export/backups/database/ -mtime +7 -exec /bin/rm {} \;  -- find files 7 days old and delete them
+find /data/backup/ -type f -ctime +21 -exec rm {} \; -- find files with type of file specified
+ssh -L 3390:<dest_host_name.simplewire.com>:3389 <jump_host_name.simplewire.com>  --open up ssh to jump linux box then run rdc locally to remote box
+for foo in * ; do du -sh $foo ; done  -- du on current directory's files
+lsof --list open files for finding why you can't delete a file 
+<cntrl> r    --reverse search through history in bash
+rdesktop -u doneill -d marchex -k en-us -g 1269x969 -a 16 -x lan -T doneill.windows.marchex.com -r sound:off -r clipboard:PRIMARYCLIPBOARD -0 doneill &
+echo num{1,2,3,4,5} | tr ' ' \\n  -- complete num1 num2 ... and space on new line
+echo num{1,2,3,4,5} | tr ' ' \\n |xargs
+echo num{1,2,3,4,5} | tr ' ' \\n |xargs -n3
+watch -- observe a command every 2 seconds (built in loop)
+cp foo.txt foo_`date +%s`  -- add versioning file based on days since 1970
+du -sk /var/lib/mysql |sort -rn > /tmp/pig_hunt_`date +%T`  -- create pig hunting file with date version
+ethtool eth0  -- look at more specific output then ifconfig
+nmap -- see if a specific port responds
+fping -- ping for file of host names or ip addresses -- fping < list.txt
+seq 1 5   --creates a sequence of the numbers 1 2 3 4 5
+wget - download files from http or ftp without browser no-interactively
+for name in `ls *.sql`; do sed s/ENGINE=MyISAM/ENGINE=InnoDB/ $name > $name.new ; mv $name.new $name ; done		-- one line shell script with multiple lines in loop
+for name in `ls`; do echo $name; done   	-- one line looping shell script		-- one line shell script with multiple lines in loop
+for name in `ls`; do sed s/pmysql/mpuzzle/ $name > $name.new ; mv $name.new $name ; done  	-- one line shell script with multiple lines in loop
+for i in `ls` ; do mysql -uroot bfg_auth_scrubbed <./$i; done
+free -m     -- available memory or mem
+find / -type f -size +20000k -exec ls -lh {} \; | awk '{ print $9 ": " $5 }' 		-- find all those big ass files
+du -sk * /var/log |sort -rn |head -100		-- hog hunting ; find all pig files but you need to change directories and chase them down
+du -a /mnt |sort -rn | head -100 > /tmp/hoh.txt -- for linux
+netstat -an    -- what ports are listening on box
+cat ./<really_big_file> > /dev/null -clears out operating system buffer 
+script.ksh >& /tmp/error_out.log &  -sends standard error and standard out
+going to the same file
+csplit <option> <file> <pattern>  -splits file into smaller files
+split -l 50000 history.txt -splits file into smaller files of 50k rows
+tar -tvf <file name>  list contents of tar ball
+find / -perm +4000 |wc -l  -finds all suid files
+find . -type f -mtime +7 -exec rm -f {} \;	(remove files greater than 7 days old)
+find .  -name "*patrol" -exec rm {} \;
+find . -type f -mtime +14 -exec rm -f {} \;   (remove files greater than 14 days old)
+find . -type f | wc -l
+find . -mtime -6 -exec du -sk {} \; | sort -n |less (find disk files newer than 6 days)
+pwconv  copy /etc/passwd and /etc/shadow to new box then run pwconv to sync files
+rsync -avvze ssh file_or_dir_to_copy dest_box:/target_dir (rsync over ssh)
+find /raid/logs/ -mtime -6 -exec du -sk {} \; | sort -n |less   (find files newer than 6 days, sizes, sorts them)
+ping -sv <host> ping with verbose output
+sort -u  --sort unique values
+pwconv	-- sync passwords	sync /etc/passwd
+grpconv	-- sync groups		sync /etc/group
+begin_time=$(date +%u)		-- day of week for bash shell script
+bash -u /tmp/shrink-chroot.sh		-- check for uninitialized variables and exit if they exist (a safety check that should always be used)
+ps aux --sort -rss    -- sort processes by used memory and sort by memory use
+
+-- generic pid kill one liner process id kill
+ps -ef | grep jenkins | head -1 | awk '{print $2}'| xargs -r kill
+
+-- check for error condition after command completion and throw error statement with command in it
+$throw=" threw an error"
+if [ $? -ne 0 ]; then out=$(fc -ln -1 | awk '{ print $1 " " $2 " " $3 }'); echo "Fail: $out$throw"; fi
+
+-- tee send redirection to file and standard out
+run_script.sh 2>&1 | tee /tmp/run_script.log
+
+-- encrypt decrypt with gpg for single file with no shared keys
+gpg --output sales_dump_pfg_test.sql.gz.gpg --symmetric sales_dump_pfg_test.sql.gz
+gpg --output sales_dump_pfg_test.sql.gz --decrypt sales_dump_pfg_test.sql.gz.gpg
+
+--- remote execution as user
+su -c "scp /tmp/file.txt user@dev-sql-0001:/tmp/file" -s /bin/sh opsuser
+
+--- remote execution of commands 
+storage_delete_command='"rm '/tmp/file.txt'"'
+su -c "ssh opsuser@dev-sql-0001 $storage_delete_command" -s /bin/sh opsuser 
+
+-- change filesystem ext3 to ext4
+
+edit /etc/fstab and change ext3 to ext4
+reboot now
+tune2fs -O extents,uninit_bg,dir_index /dev/xvda1
+update-grub
+reboot now
+log in single user mode with root password
+choose auto fix and wait for it to run, it should reboot on its own
+if it doesn't then run fsck -pf /dev/xvda1
+sync
+sync
+init 6
+reboot from console
+
+-- change filesystem to ext4 with partition
+
+fdisk /dev/xvda2
+---enter fdisk---
+list help
+add partition
+add partition number (2)
+use all available space
+set partition type to 83 (linux)
+list partition table
+verify partition table
+save partition table
+reboot
+---exit fdisk---
+mkdir /mnt/data01
+mkfs -text4 /dev/xvda2
+mount -text4 /dev/xvda2 /mnt/data01
+cp /etc/fstab /etc/fstab.orig
+vi /etc/fstab
+mount -a
+df -h
+
+-- network performance test host to host
+apt-get install nttcp
+nttcp -i
+nttcp -T 10.0.1.19
+     Bytes  Real s   CPU s Real-MBit/s  CPU-MBit/s   Calls  Real-C/s   CPU-C/s
+l  8388608    0.02    0.01   4271.4572   5592.4053    2048 130354.53  170666.7
+
+--get rate
+export num_1=`ls -al /export/data/db_data/warehouse03_full.sql | awk '{print $5}'`;echo "";sleep 10;export num_2=`ls -al /export/data/db_data/warehouse03_full.sql | awk '{print $5}'`;export num_diff=`expr $num_2 - $num_1`;export mb_sec=`expr $num_diff / 10 / 1024 / 1024`;echo "";echo "Rate = " $mb_sec "MB per second";
+--/get rate
+
+--sed file in place
+sed 's/#X11Forwarding\ no/X11Forwarding\ yes/' /etc/sshd_config > /tmp/sshd_config
+sudo mv /tmp/sshd_config /etc/.
+--/sed file in place
+
+---mount floppy drive
+mkdir /mnt/floppy
+mount -t ext2 /dev/fd0 /mnt/floppy
+ls /mnt/floppy
+---/mount floppy drive
+
+grep -i case insensitive
+grep -v opposite grep
+grep -F fast grep (grep without regex)
+. ./.kshrc  "source the file"
+fsck -F ufs /dev/vx/rdsk/rootvol
+init 0 (halt) init 1 (single user) init 5 (power off) init 6 (reboot)
+shutdown -y -g0 -i0
+stat <file> gives inode information i.e. last access to file and other stuff
+strace <process> follow the process to see where it breaks
+du -ch |grep M
+export DISPLAY = <hostname>:0.0
+xhost + or xhost - or xhost +<hostname>       (allows x display to be shown)
+mailx -s "izmo" jquicke@cobaltgroup.com < izmo_load_28493
+mailx -s ("subject") (address) < (file)
+
+mailx -s ("subject") (address) << -EOF
+	blah
+	blah
+	EOF
+
+--- get last time file modified file accessed file created file status
+stat 13_125_ccounty.csv		
+File: `13_125_ccounty.csv'
+  Size: 3473510         Blocks: 6800       IO Block: 4096   regular file
+Device: ca01h/51713d    Inode: 4898827     Links: 1
+Access: (0666/-rw-rw-rw-)  Uid: ( 1022/ opsuser)   Gid: ( 1022/ opsuser)
+Access: 2013-09-26 14:51:43.000000000 -0500
+Modify: 2013-09-26 14:51:44.000000000 -0500
+Change: 2013-09-26 14:51:44.000000000 -0500
+Birth: -
+---/get last time file modified file accessed file created file status
+	
+--------------------
+***ksh***
+--------------------
+
+<esc>k to recall last command
+<esc><esc> or <esc> <\> for command line completion
+
+--------------------
+***AWK***
+--------------------
+
+head -1 MLTKTDAT09192013.csv | awk -F ',' '{ print NF }'		-- print number of columns with comma delimiter
+head -1 MLTKTDAT09192013.csv | awk -F ',' '{ print NR,"==",NF }'	-- print number of columns with comma delimiter for each line, numbering the lines and an == between the two values
+awk '{print "processing record - ",NR;}END {print NR, "total records processed";}' file.txt		-- process file, print processing record for each line and number it, then calculate total rows 
+awk -F, '{print > $1}' file.csv			-- print out the 
+
+--------------------
+***SED***
+--------------------
+
+sed -i -e "1d" file.txt		-- delete first line of file.txt
+
+--------------------
+***DNS***
+--------------------
+set type=mx
+set type=ns
+host -d mx hotmail.com
+
+Directions for Updating or Adding DNS Entries on Sun
+
+vi /var/named/pri/db.cobaltgroup on name server and add name/ip + increment
+serial #
+vi /var/named/pri/db.192.168.4  (reverse lookup) and add name/ip + increment
+serial #
+ndc reload cobaltgroup.com (zone file) or HUP named on a small network
+ndc reload 4.168.192.IN-ADDR.ARPA (reverse file; look at top of reverse
+lookup file for correct reverse zone file)
+for problems/issues look at /var/adm/messages on a Sun box
+
+Directions for Updating or Adding DNS Entries on Linux
+
+cd /etc/bind
+Add entries to to db.lyn and db.del files
+Increment serial number to date of change and a two digit number suffix i.e. 2006112101 for the first change on November 21 2006
+Add reverse entries to db.10 for lyn because everything is a 10 network in lynwood
+Run: rndc reload
+nslookup forward and reverse for at least two entries from list on master and slave dns servers
+
+--------------------
+***X***
+--------------------
+<ctrl><alt><backspace>  --do this x3 to kill x server and return to prompt
+/etc/X11/xorg.conf    -- x config file
+xvidtune
+xterm -sb   (scroll bars)
+/usr/openwin/bin/openwin	--solaris
+/usr/dt/bin/dtlogin    	--solaris
+/etc/init.d/dtlogin start	--solaris
+
+--rxvt shortcut stuff
+
+@echo off
+ C: 
+chdir C:\cygwin\bin
+rxvt -fn 12x16 -geometry 100x20 -e bash --login -i
+
+--------------------
+***Screen***
+--------------------
+<cntrl> a -- break out a screen session
+screen -ls --show the available screens
+screen -r <name> reattach a screen
+screen -x <name> reattach with multiple
+
+--------------------
+***SSH/SCP***
+--------------------
+
+/usr/local/sbin/sshd -d -p 2022   (starts sshd on another port so you can
+restart sshd remotely)
+ssh -2 bofh   (uses second version of ssh)
+scp host:/<dir>/<file> .        uses current login at both ends
+ssh-keygen -b 2048 -f /etc/ssh/ssh_host_key_n
+ssh -X <hostname>   -- ssh over X
+
+--------------------
+***MAIL***
+--------------------
+
+-- allow mail iptables
+iptables -I INPUT 1 -t tcp --dport 25 -j ACCEPT		(You can exchange 25 with 465 and 587)
+
+-- test mail with telnet
+telnet <mailserver> 25
+HELP
+HELO <domain>
+MAIL FROM: <email>
+RCPT TO: <email>
+
+--------------------
+***NEWS***
+--------------------
+
+telnet <server> 119
+<or from in telnet> o newsgroups.comcast.net 119
+authinfo user user@foo.com
+authinfo pass password
+
+--------------------
+***TELNET***
+--------------------
+
+telnet <server> 1433 -- test port connection via telnet
+<ctntl> ] 		-- escape charecter for telnet then type quit to exit
+
+--------------------
+***VI***
+--------------------
+
+shift <v> -- highlight lines in vim
+control <v> -- highlight columns in vim
+:1,$ s/[sub1]/[sub2]/g global search and replace
+:%s/sub1/sub2/g global search and replace
+yG yank to end of file
+yyp yank and put line
+10yy <move cursor to new location> p -- yank 10 lines and put
+% (<shift> 5) to match brackets
+shift j to join two lines
+G -- go to bottom of file
+gg -- go to top of file
+dG -- delete from current line to bottom of file
+dgg -- delete everything from your current line to the top of the file.
+set list -- show hidden characters 
+set nu		-- add line numbers
+set nonu	-- remove line numbers
+:%s/\r//g    -- remove the carriage return
+:1,$ s/^M//   -- remove the windows line endings (Note: that you should type ^M by pressing ctrl-v and then ctrl-m)
+
+--------------------
+***Source Control***
+--------------------
+SVN Notes
+
+svn co http://zsvn/svn/src
+svn update ~/depot   (where the source tree starts at)
+
+--------------------
+***Git Notes***
+--------------------
+
+Adding/Updating a File
+
+git pull
+git add <file>
+git commit -m "adding foo"   or   git commit -m "adding foo" <file>
+git commit -a
+git pull --rebase
+git push
+git status
+
+Removing File
+
+git rm <file to remove>
+git commit -m "foo"
+git pull --rebase
+git push
+
+Get Status and Differences
+
+git status
+git diff
+
+Create local repository
+
+mkdir /code
+cd code/
+ssh -T git@github.com
+git clone git@github.com:briankonrath/MealTicket_marketplace.git .
+cd marketplace/
+git config --global user.name "Foo Bar"
+git config --global user.email "fbar@getmealticket.com"
+git status
+git pull --rebase
+git push
+
+--------------------
+***SHELL SCRIPTS***
+--------------------
+
+-f --short cut to test command for if the variable or name is a file and readable. for search purposes: file exists file readable
+-d --short cut to test command for is the variable or name is a directory and readable. for search purposes: directory exists directory readable
+sed -e '/^$/d' filetoread > filetowrite   --removes blank lines from file
+
+---
+-- change upper case to lower case in each file in directory and delete blank lines in each file
+#!/bin/bash		
+for x in `ls -l |awk '{print $9}' |grep -v ^$`;
+do
+        echo $x | tr [A-Z] [a-z];
+done 
+
+---
+
+#!/bin/bash
+ 
+# Set Variables Here
+vmstat_frequency=1
+vmstat_duration=10
+timestamp=$(date +%s)
+vmstat_filename="vmstat_output_"$timestamp".txt"
+postgres_filename="pglog_output_"$timestamp".txt"
+log_marker="TEST_MARKER."$timestamp
+test_path="/mount/postgres/archive_log/stress_test/load_data/"
+log_path="/var/lib/postgresql/9.2/main/pg_log/"
+log_name="postgres.log"
+ 
+# Code Starts Here
+cd $test_path
+echo $log_marker >> $log_path$log_name
+timeout $vmstat_duration vmstat -n $vmstat_frequency > $vmstat_filename
+cp $log_path$log_name $postgres_filename
+awk "/$log_marker/,0" $postgres_filename > $postgres_filename.$$
+mv $postgres_filename.$$ $postgres_filename
+awk '{print $7 "\t" $8 "\t" $9 "\t" $10 "\t" $13 "\t" $14 "\t" $15 "\t" $16}' $vmstat_filename > $vmstat_filename.$$
+sed -i '1,3d' $vmstat_filename.$$
+sed -i '/^$/d' $vmstat_filename.$$
+sed -i "1iswp_in\tswp_out\tio_in\tio_out\tuser\tsystem\tidle\twait" $vmstat_filename.$$
+mv $vmstat_filename.$$ $vmstat_filename
+
+---
+
+#!/bin/bash
+
+schema="hermes"
+#schema="athena"
+
+log_dir="/home/postgres/logs/"
+pg_log="postgresql.log"
+mod_log="postgres_mod.log"
+out_dir="/home/postgres/output/"
+duration="all_duration_data.txt"
+
+if [ ! -d $log_dir ]
+then
+     	echo "Can't find log directory called $log_dir, or the directory $log_dir is not a readable directory"
+       	exit 1
+fi
+
+if [ ! -f $log_dir$pg_log ] 
+then
+       	echo "Can't find postgres log file called $pg_log, or the  file $pg_log is not a readable file"
+       	exit 1
+fi
+
+grep -i execute $log_dir$pg_log > $log_dir$mod_log
+echo "finished grep of $pg_log and created modified $mod_log for schema $schema"
+
+if [ ! -f $log_dir$mod_log ] 
+then
+       	echo "Can't find modified postgres log file called $mod_log, or the  file $mod_log is not a readable file"
+       	exit 1
+fi
+
+if [ $schema = "hermes" ]
+
+then
+        echo "processing $schema schema"
+        out_dir="/home/postgres/output/hermes_output/"
+        rm -f $out_dir*
+	duration="hermes_duration_data.txt"
+	hermes_statement="hermes_mod.log"
+	grep -i hermes $log_dir$mod_log > $log_dir$hermes_statement
+	echo "finished grep of modified $mod_log and created $hermes_statement"
+	mv $log_dir$hermes_statement $log_dir$mod_log
+	if [ ! -f $log_dir$mod_log ]
+	then
+        	echo "Can't find hermes log file called $hermes_statement, or the  file $hermes_statement is not a readable file"
+        	exit 1
+	fi
+fi
+
+if [ $schema = "athena" ]
+then
+        echo "processing $schema schema"
+	out_dir="/home/postgres/output/athena_output/"
+        rm -f $out_dir*
+        duration="athena_duration_data.txt"
+	athena_statement="athena_mod.log"
+	grep -i athena $log_dir$mod_log > $log_dir$athena_statement
+	echo "finished grep of modified $mod_log and created $athena_statement"
+	mv $log_dir$athena_statement $log_dir$mod_log
+	if [ ! -f $log_dir$mod_log ]
+	then
+        	echo "Can't find athena file called $athena_statement, or the  file $athena_statement is not a readable file"
+        	exit 1
+	fi
+fi
+
+if [ ! -d $out_dir ]
+then
+        echo "Can't find output directory called $out_dir, or the directory $out_dir is not a readable directory"
+        exit 1
+fi
+
+statement1="statement_1.txt"
+statement10="statement_10.txt"
+statement50="statement_50.txt"
+statement100="statement_100.txt"
+statement150="statement_150.txt"
+statement200="statement_200.txt"
+statement250="statement_250.txt"
+statement300="statement_300.txt"
+statement350="statement_350.txt"
+statement400="statement_400.txt"
+statement450="statement_450.txt"
+statement500="statement_500.txt"
+statement550="statement_550.txt"
+statement600="statement_600.txt"
+statement650="statement_650.txt"
+statement700="statement_700.txt"
+statement750="statement_750.txt"
+statement800="statement_800.txt"
+statement850="statement_850.txt"
+statement900="statement_900.txt"
+statement950="statement_950.txt"
+statement1000="statement_1000.txt"
+
+grep -i "duration: [1-9].*" $log_dir$mod_log > $out_dir$statement1
+echo "finished grep of modified $pg_log and created $statement1"
+grep -i "duration: [1-4][0-9].*" $log_dir$mod_log > $out_dir$statement10
+echo "finished grep of modified $pg_log and created $statement10"
+grep -i "duration: [5-9][0-9].*" $log_dir$mod_log > $out_dir$statement50
+echo "finished grep of modified $pg_log and created $statement50"
+grep -i "duration: [1][0-4][0-9].*" $log_dir$mod_log > $out_dir$statement100
+echo "finished grep of modified $pg_log and created $statement100"
+grep -i "duration: [1][5-9][0-9].*" $log_dir$mod_log > $out_dir$statement150
+echo "finished grep of modified $pg_log and created $statement150"
+grep -i "duration: [2][0-4][0-9].*" $log_dir$mod_log > $out_dir$statement200
+echo "finished grep of modified $pg_log and created $statement200"
+grep -i "duration: [2][5-9][0-9].*" $log_dir$mod_log > $out_dir$statement250
+echo "finished grep of modified $pg_log and created $statement250"
+grep -i "duration: [3][0-4][0-9].*" $log_dir$mod_log > $out_dir$statement300
+echo "finished grep of modified $pg_log and created $statement300"
+grep -i "duration: [3][5-9][0-9].*" $log_dir$mod_log > $out_dir$statement350
+echo "finished grep of modified $pg_log and created $statement350"
+grep -i "duration: [4][0-4][0-9].*" $log_dir$mod_log > $out_dir$statement400
+echo "finished grep of modified $pg_log and created $statement400"
+grep -i "duration: [4][5-9][0-9].*" $log_dir$mod_log > $out_dir$statement450
+echo "finished grep of modified $pg_log and created $statement450"
+grep -i "duration: [5][0-4][0-9].*" $log_dir$mod_log > $out_dir$statement500
+echo "finished grep of modified $pg_log and created $statement500"
+grep -i "duration: [5][5-9][0-9].*" $log_dir$mod_log > $out_dir$statement550
+echo "finished grep of modified $pg_log and created $statement550"
+grep -i "duration: [6][0-4][0-9].*" $log_dir$mod_log > $out_dir$statement600
+echo "finished grep of modified $pg_log and created $statement600"
+grep -i "duration: [6][5-9][0-9].*" $log_dir$mod_log > $out_dir$statement650
+echo "finished grep of modified $pg_log and created $statement650"
+grep -i "duration: [7][0-4][0-9].*" $log_dir$mod_log > $out_dir$statement700
+echo "finished grep of modified $pg_log and created $statement700"
+grep -i "duration: [7][5-9][0-9].*" $log_dir$mod_log > $out_dir$statement750
+echo "finished grep of modified $pg_log and created $statement750"
+grep -i "duration: [8][0-4][0-9].*" $log_dir$mod_log > $out_dir$statement800
+echo "finished grep of modified $pg_log and created $statement800"
+grep -i "duration: [8][5-9][0-9].*" $log_dir$mod_log > $out_dir$statement850
+echo "finished grep of modified $pg_log and created $statement850"
+grep -i "duration: [9][0-4][0-9].*" $log_dir$mod_log > $out_dir$statement900
+echo "finished grep of modified $pg_log and created $statement900"
+grep -i "duration: [9][5-9][0-9].*" $log_dir$mod_log > $out_dir$statement950
+echo "finished grep of modified $pg_log and created $statement950"
+grep -i "duration: [1-9][0-9][0-9][0-9].*" $log_dir$mod_log > $out_dir$statement1000
+echo "finished grep of modified $pg_log and created $statement1000"
+
+e1=$(cat $out_dir$statement1 | wc -l)
+e10=$(cat $out_dir$statement10 | wc -l)
+e50=$(cat $out_dir$statement50 | wc -l)
+e100=$(cat $out_dir$statement100 | wc -l)
+e150=$(cat $out_dir$statement150 | wc -l)
+e200=$(cat $out_dir$statement200 | wc -l)
+e250=$(cat $out_dir$statement250 | wc -l)
+e300=$(cat $out_dir$statement300 | wc -l)
+e350=$(cat $out_dir$statement350 | wc -l)
+e400=$(cat $out_dir$statement400 | wc -l)
+e450=$(cat $out_dir$statement450 | wc -l)
+e550=$(cat $out_dir$statement550 | wc -l)
+e500=$(cat $out_dir$statement500 | wc -l)
+e600=$(cat $out_dir$statement600 | wc -l)
+e650=$(cat $out_dir$statement650 | wc -l)
+e700=$(cat $out_dir$statement700 | wc -l)
+e750=$(cat $out_dir$statement750 | wc -l)
+e800=$(cat $out_dir$statement800 | wc -l)
+e850=$(cat $out_dir$statement850 | wc -l)
+e900=$(cat $out_dir$statement900 | wc -l)
+e950=$(cat $out_dir$statement950 | wc -l)
+e1000=$(cat $out_dir$statement1000 | wc -l)
+
+echo "processing $schema unique queries"
+
+find $out_dir -type f -empty -delete
+
+total=$out_dir$schema"_unique_query.txt"
+
+for file in $out_dir*
+do
+        mod=$file".mod"
+        cp $file $mod
+        sed -i 's/[0-9].*<unnamed>:.//' $mod
+        sort -u $mod > $mod%%
+        mv $mod%% $mod
+        cat $mod >> $total
+	rm $mod
+done
+
+sort -u $total > $total%%
+mv $total%% $total
+
+echo "1|"$e1 > $out_dir$duration
+echo "10|"$e10 >> $out_dir$duration
+echo "50|"$e50 >> $out_dir$duration
+echo "100|"$e100 >> $out_dir$duration
+echo "150|"$e150 >> $out_dir$duration
+echo "200|"$e200 >> $out_dir$duration
+echo "250|"$e250 > $out_dir$duration
+echo "300|"$e300 >> $out_dir$duration
+echo "350|"$e350 >> $out_dir$duration
+echo "400|"$e400 >> $out_dir$duration
+echo "450|"$e450 >> $out_dir$duration
+echo "500|"$e500 >> $out_dir$duration
+echo "550|"$e550 >> $out_dir$duration
+echo "600|"$e600 >> $out_dir$duration
+echo "650|"$e650 >> $out_dir$duration
+echo "700|"$e700 >> $out_dir$duration
+echo "750|"$e750 >> $out_dir$duration
+echo "800|"$e800 >> $out_dir$duration
+echo "850|"$e850 >> $out_dir$duration
+echo "900|"$e900 >> $out_dir$duration
+echo "950|"$e950 >> $out_dir$duration
+echo "1000|"$e1000 >> $out_dir$duration
+
+echo ""
+echo "end of processing for "$schema
+echo "------------"
+echo "ms | DML statements"
+echo "------------"
+
+cat $out_dir$duration
+
+echo ""
+echo "end of processing $schema unique queries"
+echo "-----------------------"
+echo "queries | file location"
+echo "-----------------------"
+echo `wc -l $total`
+echo ""
+
+---
+#!/usr/bin/ksh
+# Purpose: Monitors the weblogic log size increasing to check the weblogic 
+server is not hung
+# set the hostname, directory location, and logfile name
+WEBLOGIC_MONITOR_HOSTNAME="devjpy01"
+WEBLOGIC_LOG="test_logic.log"
+WEBLOGIC_LOG_HOME="/tmp/jmq/monitor"
+# set the email list of people to notify
+# note: leave a space before and after each email address
+EMAIL_LIST=" james.quicke@t-mobile.com "
+# set the time interval in seconds to check the log
+# i.e set CHECK_INTERVAL="300" for a check every 5 minutes
+CHECK_INTERVAL="10"
+#############################################
+##  DO NOT MODIFY SCRIPT BELOW THIS POINT  ##
+#############################################
+export WEBLOGIC_MONITOR_HOSTNAME
+export WEBLOGIC_LOG
+export WEBLOGIC_LOG_HOME
+export EMAIL_LIST
+export CHECK_INTERVAL
+# check log is there and readable
+if [ ! -f "$WEBLOGIC_LOG_HOME/$WEBLOGIC_LOG" ]; then
+	echo "Error: could not read $WEBLOGIC_LOG at $WEBLOGIC_LOG_HOME"
+	echo "Bailing out of $0"
+	exit 1
+fi
+# declare size and alert functions
+GetSize() {
+	sleep $CHECK_INTERVAL
+	unset NEW_SIZE
+	NEW_SIZE=`ls -l "$WEBLOGIC_LOG_HOME/$WEBLOGIC_LOG" | awk ' {print $5} '`
+	export NEW_SIZE
+}
+RaiseAlert() {
+	mailx -s "$WEBLOGIC_LOG on $WEBLOGIC_MONITOR_HOSTNAME has not been written 
+in $CHECK_INTERVAL seconds " $EMAIL_LIST << EOF
+WARNING: $WEBLOGIC_LOG on $WEBLOGIC_MONITOR_HOSTNAME was $LAST_SIZE bytes 
+$CHECK_INTERVAL seconds ago and still $NEW_SIZE bytes now!!!
+EOF
+}
+# get initial size of log file
+GetSize
+LAST_SIZE=$NEW_SIZE
+# start loop and monitor log
+while :
+do
+	GetSize
+	if [ "$NEW_SIZE" = "$LAST_SIZE" ]; then
+		RaiseAlert
+	fi
+	LAST_SIZE=$NEW_SIZE
+done
+---
+#!/bin/bash
+for db in `cat /tmp/jmq/names.txt`
+do
+        sqlplus -s <user>/<password>@$db <foo.sql >>bar.out
+done
+---
+
+#!/usr/bin/sh
+
+#Purpose: Script checks to see if the script has an argument
+if [ $# -eq 0 ]
+then
+        echo "$0 : You must supply a file as an argument to this script"
+        exit 1
+fi
+# Script checks to see the command line argument is a file
+if [ -f $1 ]
+then
+        echo "$1 was the name of the file you entered"
+        echo "new_$1.txt is the name of the output file"
+else
+        echo "$0 : $1 is not a file; please enter a file as an argument to 
+this script"
+        exit 1
+fi
+# Script does the printing of the new file
+for name in `cat $1`
+do
+        `echo " '$name', " >> new_$1`
+done
+
+--------------------
+
+#!/bin/sh
+#Purpose: script checks memory usage and prints it out
+OLDIFS=$IFS
+IFS=$'\n'
+tempsum=0
+totalmem=0
+for m in `ps -eo user,rss --sort user | sed -e 's/  */ /g' | awk -F'[ ]' {'print $0'}`; do
+  nu=`echo $m|cut -d" " -f1`
+  nm=`echo $m|cut -d" " -f2`
+  # echo "$nu $nm $nu"
+  if [ "$nu" != "$ou" ] && [ $(echo "$nm"|grep -E "^[0-9]+$") ]
+  then
+    if [ "$tempsum" -ne 0 ]; then echo "Printing total mem for $ou: $tempsum"; fi
+    ou=$nu
+    tempsum=$nm
+    let "totalmem += $nm"
+  else
+    let "tempsum += $nm"
+    let "totalmem += $nm"
+  fi
+done
+echo "Total Memory in Use: $totalmem/$(free | grep Mem: | awk '{print $2}')"
+IFS=$OLDIFS
+
+--------------------
+
+#!/usr/bin/bash
+
+## vmstat parse script 
+## collect log script
+
+begin_time=$(date +%s)
+log_dir="/home/James/scripts/"
+output_dir="/home/James/scripts/"
+vmstat_orig="vmstat_output.txt"
+vmstat_copy="vmstat_output.out"
+log_orig="log_file.out"
+log_copy=$log_orig"_ver_"$begin_time
+
+cp $log_dir$vmstat_orig $output_dir$vmstat_copy
+
+#test_marker="START_OF_TEST_"$begin_time
+
+#echo $test_marker >> $log_dir$log_orig
+
+#sleep 5
+
+#cp $log_dir$log_orig $output_dir$log_copy
+
+#sed -i "1,/$test_marker/d" $output_dir$log_copy
+
+sed -i "1,3d" $output_dir$vmstat_copy
+
+awk '{print $1,"|",$8,"|",$8,"|",$9,"|",$10,"|",$13,"|",$14,"|",$15,"|",$16}' $output_dir$vmstat_copy > $output_dir$vmstat_copy%% && mv $output_dir$vmstat_copy%% $output_dir$vmstat_copy
+#awk '{print $1," ",$8," ",$8," ",$9," ",$10," ",$13," ",$14," ",$15," ",$16}' $output_dir$vmstat_copy > $output_dir$vmstat_copy%% && mv
+$output_dir$vmstat_copy%% $output_dir$vmstat_copy
+
+--------------------
+#!/bin/bash
+
+# take the postgresql error file and processes slow running queries into groups and a delimited file for Excel
+
+pg_log="postgresql-2013-03-08_000000.log"
+log_dir="/home/postgres/logs/"
+out_dir="/home/postgres/output/"
+
+errors="postgres_error.txt"
+duration="duration_spreadsheet.txt"
+
+statement300="statement_300.txt"
+statement400="statement_400.txt"
+statement500="statement_500.txt"
+statement600="statement_600.txt"
+statement700="statement_700.txt"
+statement800="statement_800.txt"
+statement900="statement_900.txt"
+statement1000="statement_1000.txt"
+statement1100="statement_1100.txt"
+statement1200="statement_1200.txt"
+statement1300="statement_1300.txt"
+statement1400="statement_1400.txt"
+statement1500="statement_1500.txt"
+statement1600="statement_1600.txt"
+statement1700="statement_1700.txt"
+statement1800="statement_1800.txt"
+statement1900="statement_1900.txt"
+statement2000="statement_2000.txt"
+
+if [ ! -d $log_dir ]
+then
+        echo "Can't find log directory called $log_dir, or the directory $log_dir is not a readable directory"
+        exit 1
+fi
+
+if [ ! -d $out_dir ]
+then
+        echo "Can't find output directory called $out_dir, or the directory $out_dir is not a readable directory"
+        exit 1
+fi
+
+if [ ! -f $log_dir$pg_log ]
+then
+        echo "Can't find the postgres error log called $pg_log in $log_dir, or the file $pg_log is not a readable file"
+        exit 1
+fi
+
+grep -i duration: $log_dir$pg_log > $log_dir$errors
+echo "finished grep of $pg_log and created modified $pg_log"
+
+grep -i "duration: [3][0-9][0-9].*" $log_dir$errors > $out_dir$statement300
+echo "finished grep of modified $pg_log and created $statement300"
+grep -i "duration: [4][0-9][0-9].*" $log_dir$errors > $out_dir$statement400
+echo "finished grep of modified $pg_log and created $statement400"
+grep -i "duration: [5][0-9][0-9].*" $log_dir$errors > $out_dir$statement500
+echo "finished grep of modified $pg_log and created $statement500"
+grep -i "duration: [6][0-9][0-9]*" $log_dir$errors > $out_dir$statement600
+echo "finished grep of modified $pg_log and created $statement600"
+grep -i "duration: [7][0-9][0-9].*" $log_dir$errors > $out_dir$statement700
+echo "finished grep of modified $pg_log and created $statement700"
+grep -i "duration: [8][0-9][0-9].*" $log_dir$errors > $out_dir$statement800
+echo "finished grep of modified $pg_log and created $statement800"
+grep -i "duration: [9][0-9][0-9].*" $log_dir$errors > $out_dir$statement900
+echo "finished grep of modified $pg_log and created $statement900"
+grep -i "duration: [1][0][0-9][0-9].*" $log_dir$errors > $out_dir$statement1000
+echo "finished grep of modified $pg_log and created $statement1000"
+grep -i "duration: [1][1][0-9][0-9].*" $log_dir$errors > $out_dir$statement1100
+echo "finished grep of modified $pg_log and created $statement1100"
+grep -i "duration: [1][2][0-9][0-9].*" $log_dir$errors > $out_dir$statement1200
+echo "finished grep of modified $pg_log and created $statement1200"
+grep -i "duration: [1][3][0-9][0-9].*" $log_dir$errors > $out_dir$statement1300
+echo "finished grep of modified $pg_log and created $statement1300"
+grep -i "duration: [1][4][0-9][0-9].*" $log_dir$errors > $out_dir$statement1400
+echo "finished grep of modified $pg_log and created $statement1400"
+grep -i "duration: [1][5][0-9][0-9].*" $log_dir$errors > $out_dir$statement1500
+echo "finished grep of modified $pg_log and created $statement1500"
+grep -i "duration: [1][6][0-9][0-9].*" $log_dir$errors > $out_dir$statement1600
+echo "finished grep of modified $pg_log and created $statement1600"
+grep -i "duration: [1][7][0-9][0-9].*" $log_dir$errors > $out_dir$statement1700
+echo "finished grep of modified $pg_log and created $statement1700"
+grep -i "duration: [1][8][0-9][0-9].*" $log_dir$errors > $out_dir$statement1800
+echo "finished grep of modified $pg_log and created $statement1800"
+grep -i "duration: [1][9][0-9][0-9].*" $log_dir$errors > $out_dir$statement1900
+echo "finished grep of modified $pg_log and created $statement1900"
+grep -i "duration: [2-9][0-9][0-9][0-9].*" $log_dir$errors > $out_dir$statement2000
+echo "finished grep of modified $pg_log and created $statement2000"
+
+e300=$(cat $out_dir$statement300 | wc -l)
+e400=$(cat $out_dir$statement400 | wc -l)
+e500=$(cat $out_dir$statement500 | wc -l)
+e600=$(cat $out_dir$statement600 | wc -l)
+e700=$(cat $out_dir$statement700 | wc -l)
+e800=$(cat $out_dir$statement800 | wc -l)
+e900=$(cat $out_dir$statement900 | wc -l)
+e1000=$(cat $out_dir$statement1000 | wc -l)
+e1100=$(cat $out_dir$statement1100 | wc -l)
+e1200=$(cat $out_dir$statement1200 | wc -l)
+e1300=$(cat $out_dir$statement1300 | wc -l)
+e1400=$(cat $out_dir$statement1400 | wc -l)
+e1500=$(cat $out_dir$statement1500 | wc -l)
+e1600=$(cat $out_dir$statement1600 | wc -l)
+e1700=$(cat $out_dir$statement1700 | wc -l)
+e1800=$(cat $out_dir$statement1800 | wc -l)
+e1900=$(cat $out_dir$statement1900 | wc -l)
+e2000=$(cat $out_dir$statement2000 | wc -l)
+
+echo "300|"$e300 > $out_dir$duration
+echo "400|"$e400 >> $out_dir$duration
+echo "500|"$e500 >> $out_dir$duration
+echo "600|"$e600 >> $out_dir$duration
+echo "700|"$e700 >> $out_dir$duration
+echo "800|"$e800 >> $out_dir$duration
+echo "900|"$e900 >> $out_dir$duration
+echo "1000|"$e1000 >> $out_dir$duration
+echo "1100|"$e1100 >> $out_dir$duration
+echo "1200|"$e1200 >> $out_dir$duration
+echo "1300|"$e1300 >> $out_dir$duration
+echo "1400|"$e1400 >> $out_dir$duration
+echo "1500|"$e1500 >> $out_dir$duration
+echo "1600|"$e1600 >> $out_dir$duration
+echo "1700|"$e1700 >> $out_dir$duration
+echo "1800|"$e1800 >> $out_dir$duration
+echo "1900|"$e1900 >> $out_dir$duration
+echo "2000|"$e2000 >> $out_dir$duration
+
+echo "end of processing"
+echo "------------"
+echo "ms | queries"
+echo "------------"
+
+cat $out_dir$duration
+
+--------------------
+***SOLARIS***
+--------------------
+
+sysinfo | less
+vmstat
+truss find . -print > find.out (traces what system calls a command makes)
+
+---crash dump procedure---
+make directory and put dump file in it
+showrev -p > showrev.out
+/usr/platform/sun4u/sbin/prtdiag > prtdiag.out
+copy of /etc/system
+/var/crash/'hostname'/vmcore.0
+/var/crash/'hostname'/unix.0
+---/crash dump procedure---
+
+psrinfo  -- gives CPU count on sun box
+sysinfo | less
+/usr/bin/isainfo -kv   --determining if solaris version running is 64 bit
+version
+/etc/default/su        (default area of .profile files)
+/etc/default/login    (default area of .profile files)
+
+Networking
+need four files (/etc/nsswitch, /etc/resolv.conf, /etc/defaultrouter,
+/etc/hosts)
+---resolv.conf---
+domain    bess.net
+nameserver    206.129.0.251
+nameserver    206.129.0.252
+---/resolv.conf---
+/usr/sbin/ndd -set /dev/tcp        reduce tcp/ip drop period
+
+Boot Prom
+<stop> <a> to halt box
+setenv auto-boot? false
+printenv
+probe -scsi -all
+reboot -- -r  (reboot reconfigure)
+boot -sw  (single user mode
+sifting boot   (available options)
+help diags
+help nets
+reset all
+(from within os level) /user/platform/[plat_name]/sbin/eeprom eeprom
+[command]
+---change cpu speed on SUN---
+ok	senv auto-boot? false
+ok	reset -all
+ok	also*hidden also hidden
+ok	d# 404 at-speed
+ok	.speed
+ok	boot cd-rom
+(also fixed with 105.181.20 patch
+---/change cpu speed on SUN---
+
+Patches/Packages
+
+showrev -p |grep *
+pkgadd -d (packages start with 4 upper case letters)
+
+RC Level stuff
+/etc/power.conf    (alter this to prevent autoshutoff)
+/etc/init.d/inetsvc restart
+/etc/init.d/inetinit restart
+
+File System
+---make a file system---
+newfs -v /dev/rdsk/c0t1d0s6
+vi fstab to include entry
+mkdir /dumpdir    (include chmod 777 needs execute)
+mount -F ufs /dev/dsk/c0t1d0s6 //dumpdir
+---/make a file system---
+
+--------------------
+***REDHAT***
+--------------------
+
+-- setup init.d scripts automatically
+chkconfig --add  mysql
+chkconfig --list mysql
+chkconfig --level 2 mysql off
+
+<cntrl> x -stops lilo
+rpm -Uvh MySQL-server-community-5.1.24-0.rhel5.x86_64.rpm
+rpm -ql <package>
+rpm -q <package>        -- query for package
+rpm -e <package>         -- remove the package
+rpm -i <package>       -- install package
+rpm -i <package> --nodeps      -- install package ignoring dependancies
+rpm -U <package>     -- update current package with new package 
+chkconfig		-- updates the rc.d from a new entry in init.d (redhat)
+
+rpm2cpio MegaCli-8.07.07-1.noarch.rpm |cpio -idmv		-- change rpm to standard. expand rpm. redhat to linux
+
+--------------------
+***DEBIAN***
+--------------------
+
+update-rc.d		-- updates the rc.d from a new entry in init.d  (debian)
+dselect
+dpkg -i (configures it)
+dpkg -p (purges it)
+dpkg --help
+dpkg -reconfigure <package name>
+
+/etc/apt/etc/apt  --where the os looks for places to update from
+
+--- example of postgres.list from /etc/apt/so
+# postgres
+deb http://apt.postgresql.org/pub/repos/apt/ precise-pgdg main
+deb-src http://apt.postgresql.org/pub/repos/apt/ precise-pgdg main
+---
+
+apt-cache search kernel	-- look for versions available
+apt-get install <name of kernel>
+apt-get install		--all
+apt-get update 
+apt-get upgrade
+apt-get remove		-- if remove fails due to failed stop then place :exit 0 in runfile for application
+
+/etc/apt/sources.list.d/		-- has the list of extra packages for debian/ubuntu; add a file there with the details in it
+
+--- example of postgres.list from /etc/apt/so
+# postgres
+deb http://apt.postgresql.org/pub/repos/apt/ precise-pgdg main
+deb-src http://apt.postgresql.org/pub/repos/apt/ precise-pgdg main
+---
+
+--------------------
+***HP-UX***
+--------------------
+
+swlist -- gives hpux version information
+
+/var/adm/inet.sec - controls log in permissions from network i.e. no root
+login
+ioscan -funkC disk
+ioscan -funkC tape
+---boot in single user mode---
+boot hard
+press space to skip boot
+boot pri isl <return>
+<y> to interact with acl
+hpux -is <return>
+fsck <y> <y> (fix problem then bring up multiuser mode)
+mount -a
+init 4
+---/boot in single user mode---
+fuser - checks process using file/file structure
+
+--------------------
+***LINUX***
+--------------------
+
+---control swap control swappiness
+/sbin/sysctl -a|grep swappiness			#echo out current swappiness of the system. 
+/etc/sysctl.conf
+vm.swappiness = 60						#normal (causes swap) 
+vm.swappiness = 1						#swap ~= off
+/sbin/sysctl -p	or reboot
+---/control swap control swappiness
+
+---MBR Backup or Overwrite---
+dd if=/dev/zero of=/dev/hda bs=512 count=1
+dd if=/dev/hda of=/mbr.bin bs=512 count=1
+/sbin/lilo -b /dev/fd0  --write backup to floppy
+---/MBR Backup or Overwrite---
+
+file <file> gives filetype
+tac is 'cat' command in reverse order
+cat /proc/version gives linux version
+<cntrl><alt> f1-f7 in GUI to switch console
+<alt> f1-f7 on command line to switch console
+kdm -starts login manager
+
+ptrace (traces system calls in linux/like truss in unix)
+cat /etc/proc -- distribution version & kernel version
+
+---Break Linux Boot Cycle---
+[shift][tab]
+boot linux init=/bin/bash rw
+ezfsck -c -y /dev/sda0       (-c surface scan -y promts)
+---/Break Linux Boot Cycle---
+
+zcat <filename>|tar xvf -
+
+boot: linux 1 --booting single user mode
+linux single --booting single user mode
+linux -s --booting single user mode
+
+--mount floppy drive
+(if it does not exist) mkdir /mnt/floppy
+mount -t ext2 /dev/fd0 /mnt/floppy
+ls /mnt/floppy
+
+--------------------
+***NETWORK***
+--------------------
+tcpdump -n -1 -s1500 -w -dst port 80 |less
+tcpdump host searchdb1
+---resolv.conf entry---
+host<tab>files<tab>dns<tab>[NOTFOUND = return]
+---/resolv.conf entry---
+add host 216.32.10.1: gateway 216.32.10.3
+route add 216.32.10.1 216.32.10.1 0
+route add default 216.32.10.1 0
+
+--------------------
+***VERITAS***
+--------------------
+vxdisk list (displays all disks)
+bpbackup –I –t0 -f <file_name>
+vgdisplay -v
+vxdiskadm
+vxserial -c (upgrade veritas licenses)
+/usr/sbin/osa/rm6 (veritas gui)
+raidutil -c <dev name> -R
+/usr/lib/vxvm/bin/vxrootmir <disk name> (root mirror)
+/opt/vrtsvxva/bin/vxva
+veritas install order (vxinstall, never do quick install, encapsulate boot
+disk, reboot, encapsulate mirror in group
+/dev/vx/rdsk/dbdg/  (where veritas vols show up)
+
+--------------------
+***Perforce***
+--------------------
+export P4PORT=dev-perforce-1:1666
+export P4USER=jboss
+export EDITOR=vi
+p4 client jboss
+export P4CLIENT=jboss
+p4 sync
+
+--------------------
+***BMC PATROL***
+--------------------
+
+--------------------
+***NETSCAPE***
+--------------------
+
+hold down shift and click on link to save
+hold down cntrl and click to view
+
+--------------------
+***Emacs***
+--------------------
+
+<cntrl> x <cntrl> c  (exit emacs quickly without saving)
+<cntrl> a  (jump cursor to start of a line)
+<cntrl> e  (jump cursor to end of a line)
+
+--------------------
+***apache***
+--------------------
+
+netstat -alpn | grep :80 | awk '{print $5}' |awk -F: '{print $(NF-1)}' |sort | uniq -c | sort -n    -- check how many http connections are coming from each ip (for DDoS)
+top -b -c -n 1 | grep httpd | awk '{print $6}'   -- check how much memory each apache process is using
+awk -vDate=`date -d '03:11' +[28/Jan/2013:%H:%M:%S` -vDate2=`date -d'04:28' +[28/Jan/2013:%H:%M:%S` ' { if ($4 > Date && $4 < Date2) print $0}' httpd-access_log    -- check apache logs for specified date range
+
+apachectl start/stop/restart
+htpasswd (executable to set password)
+.htpasswd (password file itself...look in httpd.conf for location)
+httpd.conf (apache conf file)
+.htgroups (like /etc/group file)
+.htaccess (specifies what group people need to be in)
+
+-- setting up apache2 with ssl
+
+mkdir /etc/apache2/ssl
+export RANDFILE=/dev/random
+openssl req -config /etc/ssl/openssl.cnf \ -new -x509 -nodes -out /etc/apache2/ssl/apache.pem \ -keyout /etc/apache2/ssl/apache.pem
+chmod 600 /etc/apache2/ssl/apache.pem
+ln -sf /etc/apache2/ssl/apache.pem \ /etc/apache2/ssl/`/usr/bin/openssl \ x509 -noout -hash < /etc/apache2/ssl/apache.pem`.0
+cd /etc/apache2/sites-available;  cp default ssl
+ln -s /etc/apache2/sites-available/ssl /etc/apache2/sites-enabled/000-ssl
+echo 'Listen 443' >> /etc/apache2/ports.conf
+a2enmod ssl
+add to /etc/apache2/sites-available/ssl
+      NameVirtualHost *:443
+    <VirtualHost *:443>
+      SSLEngine On
+      SSLCertificateFile /etc/apache2/ssl/apache.pem
+
+--------------------
+***NFS***
+--------------------
+
+---To export an nfs share of /ftpguest---
+1: Edit /etc/exports on server and add an entry like the following
+/ftpguest <server name>(rw,no_root_squash)
+Stop/start nfs daemon
+/etc/rc.d/init.d/nfs stop
+/etc/rc.d/init.d/nfs start
+2: Create a directory structure on target:
+mkdir -p /ftpguest
+3: Mount the nfs share on target
+# Permanent
+edit /etc/fstab adding the following line
+<server name>:/ftpguest /<mountpoint> nfs
+rw,bg,intr,rsize=8192,wsize=8192,tcp,vers=3
+# Temporary
+mount -t nfs -o rw,bg,intr,rsize=8192,wsize=8192,tcp,vers=3 <servername>:/ftpguest /<mountpoint>
+---/To export an nfs share of /ftpguest---
+
+---restart nfs without rebooting---
+login to server as root
+run /etc/init.d/nfs.server stop
+run /etc/init.d/nfs.server start
+run /usr/sbin/shareall
+---/restart nfs without rebooting---
+
+--------------------
+***BigIP***
+--------------------
+b virtual 216.241.219.248
+b vip 216.241.219.23
+b self show
+b vip |less
+b pool servergroup6
+
+--------------------
+***WebLogic***
+--------------------
+
+startWebLogic.sh
+stopWebLogic.sh
+***/WebLogic***
+
+--------------------
+***Nagios***
+--------------------
+cd /usr/local/nagios/etc
+
+hosts.cfg
+services.cfg
+
+/usr/local/nagios/bin/nagios -v nagios.cfg  -- test your nagios config
+/etc/init.d/nagios restart  -- restart nagios after making saving changes
+
+--------------------
+***Windows***
+--------------------
+
+robocopy C:\Users\james\Desktop\ "e:\sophia (current)\10_19_2020_backup_num_1\Desktop" /E /Z /MIR
+FORMAT /X /FS:NTFS G:   -- force close of file handles and reformat
+c:\windows32\drivers\etc\hosts  windows host file location
+mstsc /v:LYN-STA-SQL-001 /f
+mstsc /v:LYN-STA-SQL-001 /f /console 	---gives you the console connection
+ipconfig /flushdns  
+nbtstat -RR  (release & refresh)  (command displays netbios over tcp/ip)
+nbtstat -R  (reload)  (command displays netbios over tcp/ip)
+shutdown -m \\lyn-sta-sql-002 -r
+restart RemoteRegistry service 			-- to refresh lost performance counters
+arp -a		-- gives arp table for mac address to ip translation
+net use * \\admin1.sad.marchex.com\D$ /u:SAD\administrator *  --map remote domain drive from command line
+start x:  -- start up explorer on drive X:
+shutdown -a -- abort reboot on windows server
+attrib c:\boot.ini -s -h -r -a --removes the system (s), hidden (h), and read-only (r) flags
+attrib c:\boot.ini +s +h +r +a --adds the system (s), hidden (h), and read-only (r) flags
+
+--------------------
+***BSD***
+--------------------
+
+-- to install port of choice
+
+cd /usr/ports/
+cd shells/
+cd bash
+make install
+rehash  -- to reload executable path in tcsh
+
+--------------------
+***Firewalls UFW***
+--------------------
+apt-get install iptables
+apt-get install fail2ban
+echo "1" > /proc/sys/net/ipv4/ip_dynaddr
+echo "1" > /proc/sys/net/ipv4/ip_forward
+apt-get install bridge-utils
+apt-get install iproute
+apt-get install chkrootkit rkhunter
+chkrootkit -q -e
+rkhunter --versioncheck
+rkhunter --update
+rkhunter --propupd
+rkhunter --cronjob --report-warnings-only 
+apt-get install  mailutils mailx tripwire openssl-blacklist
+
+############################ S95masquradescript ## nat.sh ######################################################
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:
+# Required-Start:
+# Required-Stop:
+# Default-Start:
+# Default-Stop:
+# Short-Description:
+### END INIT INFO
+
+
+echo -e "\n\nLoading simple rc.firewall-iptables version $FWVER..\n"
+DEPMOD=/sbin/depmod
+MODPROBE=/sbin/modprobe
+
+EXTIF="eth0"
+INTIF1="eth1"
+INTIF2="eth2"
+
+echo "   External Interface:  $EXTIF"
+echo "   Internal Interface1:  $INTIF1"
+echo "   Internal Interface2:  $INTIF2"
+
+#======================================================================
+#== No editing beyond this line is required for initial MASQ testing ==
+echo -en "   loading modules: "
+echo "  - Verifying that all kernel modules are ok"
+$DEPMOD -a
+echo "----------------------------------------------------------------------"
+echo -en "ip_tables, "
+$MODPROBE ip_tables
+echo -en "nf_conntrack, "
+$MODPROBE nf_conntrack
+echo -en "nf_conntrack_ftp, "
+$MODPROBE nf_conntrack_ftp
+echo -en "nf_conntrack_irc, "
+$MODPROBE nf_conntrack_irc
+echo -en "iptable_nat, "
+$MODPROBE iptable_nat
+echo -en "nf_nat_ftp, "
+$MODPROBE nf_nat_ftp
+echo "----------------------------------------------------------------------"
+echo -e "   Done loading modules.\n"
+echo "   Enabling forwarding.."
+echo "1" > /proc/sys/net/ipv4/ip_forward
+echo "   Enabling DynamicAddr.."
+echo "1" > /proc/sys/net/ipv4/ip_dynaddr
+echo "   Clearing any existing rules and setting default policy.."
+
+iptables-restore <<-EOF
+*nat
+-A POSTROUTING -o "$EXTIF" -j MASQUERADE
+COMMIT
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD DROP [0:0]
+:OUTPUT ACCEPT [0:0]
+-A FORWARD -i "$EXTIF" -o "$INTIF1" -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+-A FORWARD -i "$EXTIF" -o "$INTIF2" -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+-A FORWARD -i "$INTIF1" -o "$EXTIF" -j ACCEPT
+-A FORWARD -i "$INTIF2" -o "$EXTIF" -j ACCEPT
+-A FORWARD -j LOG
+COMMIT
+EOF
+
+echo -e "\nrc.firewall-iptables v$FWVER done.\n"
+####################################################################################
+
+--------------------
+***EOF***
+--------------------

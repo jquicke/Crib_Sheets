@@ -1,0 +1,81 @@
+Machining Cribsheet
+Current Version 11.28.15
+Started Version 11.24.15
+
+*Electric Motors*
+1800 rpm motor provides more torque over 3600 rpm motor (torque over speed)
+VFD = 1 phase in and 3 phase out
+
+*Tool Bits*
+de-magnitize tool bits using magnetic field generated between solder gun tip (magnet,magnets)
+
+*Drill Sharpening*
+135 degree for steel (67.5 degrees)
+118 degree for non ferrous materials (59 degrees)
+cutting edge needs relief (3 to 5 degrees)
+check length of cutting edges and make sure they are equal
+
+*Carbide Inserts*
+
+TPU-322 Insert
+shape - triangle 
+insert clearance angle - 11 degree
+tolerance +/- .003" insert size
+tolerance +/- .003" thickness
+size - 3/8"
+thickness - 1/4"
+nose radius - 1/32"
+
+*Calculate Facemill Speeds*
+
+Step 1) Calculate SFM (Surface Feet/Minute, which determines RPM:
+
+SFM with HSS Endmills
+Stainless Steel 40
+Mild Steel 100
+Brass 300
+Aluminum 400
+
+SFM with Uncoated Carbide Endmills, multiply those HSS setting by 3 (starting point)
+Stainless Steel 120
+Mild Steel 300
+Brass 900
+Aluminum 1200
+
+SFM with Coated Carbide Endmills, multiply HSS settings by 4 (starting point)
+Stainless Steel 160
+Mild Steel 400
+Brass 1200
+Aluminum 1600
+
+Step 2) calculate RPM:
+RPM = 4 x SFM / Diameter of cutter head
+
+Step 3) calculate chip load: A reasonable starting point for the chip load is to divide your endmill diameter by 200.
+Chip Load = Diameter / 200
+
+Step 4) calculate feed rate in IPM (inch per minute):
+Feed Rate= RPM x Num of Teeth x Chip Load
+
+Example: 1/4" HSS endmill in steel
+RPM = 4 x 100/.25 = 1600
+Feed Rate = 1600 x 2 x .25/200 = 4 IPM
+
+Step 5) calculate slotting max radial and axial cut depth:
+6061 Aluminum, Brass - 50% endmill diameter
+7075 Aluminum - 40% endmill diameter
+Mild Steel - 30-35% endmill diameter
+Stainless Steel - 20-25% endmill diameter
+
+Step 6) calculate plunging max radial and axial cut depth:
+normal slotting feedrate divided by number of flutes
+
+Step 7) calculate tool overlap:
+rough overlap 70% endmill diameter or less
+finish overlap 3% endmill diameter
+
+*Calculate Lathe Spindle Speeds*
+HSS Cutter
+(Cutting Speed in FPM x 12) / (Dia. of Cut in inches x 3.14) = RPM
+Carbide Cutter
+((Cutting Speed in FPM * 2) x 12) / (Dia. of Cut in inches x 3.14) = RPM

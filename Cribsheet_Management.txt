@@ -1,0 +1,492 @@
+Current Version 12.21.16
+Started Version 7.25.06
+
+---Hiring Criteria---
+Are they able to accomplish or learn to accomplish the technical aspects of the job?
+Will they be able to work with internal and external customers as well as other members of the team?
+Do they exhibit a strong work ethic i.e. a consistent desire to produce quality work that is both accurate and timely?
+Can I learn from this person?
+Does this person add to the intellectual capital of the organization?
+---/Hiring Criteria---
+
+---Roles & Responsibilities---
+Recoverability - Creating and testing database backups and backup procedures
+Integrity - Verifying database and data integrity
+Security - Defining and implementing access control to the data
+Availability - Ensuring maximum server and data uptime
+Performance - Ensuring maximum performance for databases given budgetary constraints
+Support - Helping users efficiently and effectively utilize the available database resources
+---/Roles & Responsibilities---
+
+---SQL DBA Screening Questions---
+If a customer reports a problem with connectivity to a SQL Server what are the first three things you would do to diagnose the problem?
+If you could only look at the three performance counters, which three would you look at to gauge the health of a SQL Server system?
+What is tempdb used for and what are some best practices to follow when building it out?
+What are two approaches that you could use to query highly transactional data and not cause blocking with your query?
+Using T-SQL, what query would you run against a SQL Server to see only the active process that were running in the msdb database?
+How much memory should you configure SQL Server to run with on a memory starved server with high i/o load? 
+What command could you use to determine what specific SQL input a user process was given to run?
+Describe two methods you could use to view query execution costs.
+Describe two methods to clear out user connections from a database so it can be recovered without restarting the SQL Server instance
+If you have a database that is exclusively being updated via SQL transactional replication (i.e. all of the tables in the database are included in the publication).
+What backup recovery model should you use for the subscribing database?
+---/SQL DBA Screening Questions---
+
+---SMART Goals---
+S pecific
+M easurable
+A chievable
+R ealistic
+T ime Based
+---/SMART Goals---
+
+---5 Hiring Phases---
+1) writing "interesting" job descriptions for the position
+2) generating resumes into the HR/management pipeline via advertising and networking 
+3) creating templates for standard screening questions (mostly problem sets not simple "available Google answers" )
+4) interviewing
+5) hiring
+All phases are important, however phases 1 & 2 are critical to even getting to 3, 4, and 5
+---/Hiring Phases---
+
+---DBA interview questions---
+1. what is shared memory and what is it used for?
+2. what is paging and what is swapping?
+3. how does a kernel scheduler work?
+4. what are key differences between access methods in stacks and queues?
+5  what is a system call and what is a library call?
+6. describe the basic two phase commit protocol
+7. describe for me key differences between OLAP and OLTP
+8. describe for me key differences between a star and snowflake schema
+9. explain to me methods for tuning ETL
+10. data model scenario: you are working for an automobile manufacturer; sketch out a model to analyze monthly sales for the following tracking criteria:
+	a) models b) months c) regions d) cities
+11. how would i look for index fragmentation on a <insert db vendor choice> instance?
+12. how could i see what sql string a particular <insert db vendor choice> user is running?
+13. describe indexes in relation to <insert db vendor choice>
+14. explain to me how <insert db vendor choice> stores data on a physical disk
+15. explain to me how data replication works in <insert db vendor choice>
+16. write me sql that will find all rows with consecutive rows in the following table called "Project" with columns:
+	 proj_id(int), proj_start(datetime), proj_end(datetime)
+17. write me sql that would create a empty copy of a populated table
+18. write me sql statement that would equaluate the salary column in the folowing table and display
+"overpaid" if salary is over 150,000 , "underpaid" if salary is under 50000 , or "normal" if is it between those two
+19.How long will it take a person entering and saving data via a simple text editor to fill up a floppy disk?
+20.given two sandglass type eggtimers; one that works for 7 minutes and one that runs for 11 minutes; how would you boil an egg for exactly 15 minutes?
+---/DBA interview questions---
+
+"keep the wheels on the bus"
+
+---DW/BI Interview Questions ---
+
+DW Questions:
+
+Q. What is the difference between a data mart and data warehouse?
+A. A data warehouse is a large analytic database which derives its data from a variety of production systems. It is the foundation of a decision support system that meets the requirements of a large business user community. A data mart contains a sub-set of the corporate data and usually limited in scope to a department or business unit. A data mart is focused on a single subject area.
+
+Q. There are two fundamental methods of data warehouse architecture. Can you name them, then compare and contrast the two methods?
+A. Kimball and Inman. Kimball method builds individual data marts and relies on conformed dimensions to create consistency across data marts. (aka bus architecture)  Inman builds an enterprise data warehouse that feeds each data mart (aka Hub and Spoke architecture). The benefits of Kimball method are the system is built faster and users can start to get value from the BI project. The down side is the conformed dimensions rely on convention. When multiple groups work on building the data marts convention is not always followed. This causes the data marts to become silos and not related to each other.  The benefits of Inman are a single data warehouse strictly enforces an enterprise view of the data. Therefore all the data marts using the data warehouse are tightly integrated. The down side is Inman requires a lot of up front time to develop an enterprise view of the company’s data. It can take a year or more to get the first data mart to the users.
+
+Q. What is OLAP?
+A. It is a multi-dimensional view of the world instead of the traditional rows/columns data base.  Each data item is located based on the intersection of the dimensions defining it. OLAPs are commonly called cubes, but this shouldn’t be confused with limiting an OLAP to 3 dimensions. (A candidate could go into a lot of details about OLAP, so this is only a basic answer)
+
+Q. What is metadata for data warehousing?
+A. It’s everything that describes the data in the data warehouse. For example, how the data is mapped from the source to the target data warehouse. It’s the description of each field in the data warehouse and data mart. It’s the documentation describing the architecture of the data warehouse/date marts. 
+
+Q. What are some of the greatest challenges you have had implementing an ETL system?
+A. (no single answer)
+
+Q. Why do you think a large percentage of BI projects fail?
+A. (no single answer)
+
+SQL Questions
+
+Q. What is the difference between an inner and out join?
+A. An inner join returns row that have a matching values in the field on which the tables are joined. An outer join  is a join where all rows are included in the results even if they don’t match the join condition.
+
+Q. What does HAVING in a query?
+A. It restricts the rows returned by a GROUP BY query. 
+Follow up question: What type of restrictions should be used in the HAVING? Only conditions that involve an aggregation.
+
+Q. What are sub queries?
+A. They should talk about where they can appear in a query and that this is platform independent. You should ask them to choose a platform and tell you where they can appear. There’s a lot of information they can tell you. The more in depth they go, the better (as long as it’s accurate)
+
+Q. What is your approach to tuning a query?
+A. No single answer here.
+
+Programming  Questions
+
+Q. What is a linked list?
+A. There are two basic types of linked list (single and double). A single contains an element with a value(s) and a pointer to the next element in the list. The link of the last element in the list is marked to indicate it’s the last element.  A double linked list also contains a pointer to the previous element. Usually the “previous” pointer of the first element is NULL.  There are other types of linked list, so it’s a bonus if they explain those.
+
+Q. What is the difference between the stack and heap? 
+A. The heap or free store is the area of memory used for dynamic memory allocation for a program. When malloc() is called it get’s memory from the heap. The stack is used by the program to basically keep track of what instruction is being executed. It is possible to create a variable locally in a subroutine using the stack memory. The scope of the variable is limited to the subroutine. 
+
+Q. What is a Hash Table?
+A.  A data structure that uses key/value pairs. It’s an efficient way to do lookups. The keys are transformed by a hash function. This is a number that is used to index into an array to locate the desired location where the value should be. (There’s a lot more the candidate could discuss, but this is a basic definition)
+
+---/DW & BI Interview Questions --- 
+
+---Operational Goal Process Steps---
+
+Phase 1
+
+Determine or create maintenance windows
+Determine and tune signal/noise ration for services monitoring
+Determine physical capacity and growth
+Determine basal and peak database performance
+Determine and document acceptable database reliability and response (SLA)
+
+Phase 2
+
+Implement automated backup and restore scripts
+Implement automated database consistency scripts
+Implement automated db performance monitoring scripts
+Implement database access/account policies 
+Implement audit/cleanup db login schedules
+
+Phase 3
+
+Implement consistent service/patch levels
+Implement consistent build processes and packaged code deployments
+Implement consistent db management tools
+Implement consistent screening and interviewing approach
+Implement end user training and walk-a-mile programs for promoting internal recruiting
+
+---/Operational Goal Process Steps---
+
+---General Good Things---
+
+1. at least 24 hour advance notice on production hardware changes
+2. all changes to production configurations get logged
+3. no production pushes on Friday
+4. reduce daily hotfixes to weekly packages
+5. schedule pushes on tuesday with fallback for wednesday
+6. change request and emergency change request procedures and formality
+7. document and distribute architecture topology
+8. load balancers and databases provide the biggest threats to website stability
+	i. be careful and don’t rush during changes; cleanup always takes longer than doing it right the first time slower
+	ii. follow written step by step procedures ; don’t do it from memory and note completed steps in case you get disrupted
+	iii. get a second set of eyes on the changes when possible (especially when payment/cash transactions are involved)
+	iv. read your command twice before committing the transaction/change
+	v. remove repetitive manual procedures that use GUI tools as humans are error prone
+	vi. automate using vendor API to manage multiple events concurrently (this is especially important with load balancers)
+---/General Good Things---
+
+***IT Check Off Sheet***
+
+0. Facilities (office & datacenter)
+            a. controlled access
+            b. secured hardware/software areas
+            c. power/cooling requirements & capabilities
+            d. onhand parts and spares
+            e. asset tracking
+
+1. Storage (NAS/SAN/DAS)
+        
+	    a. capacity & growth
+            b. redundancy
+            c. licensing & support                                                                                                              
+            d. performance metrics
+            e. names/physical locations
+       
+2. SQL Server Instances
+
+            a. backup recovery
+            b. monitoring
+            c. trending  (performance/space)
+            d. upgrades/licenses
+            e. SLA/uptime
+            f. names/physical locations
+
+3. MySQL Instances
+
+            a. backup recovery
+            b. monitoring
+            c. trending (performance/space)
+            d. upgrades/licenses
+            e. SLA/uptime
+            f. names/physical locations
+
+4. Windows Servers
+
+            a. backup recovery
+            b. monitoring
+            c. trending
+	    d. upgrades/service packs
+            e. SLA/uptime
+	    f. names/physical locations
+
+5. Linux Servers
+
+            a. backup recovery
+            b. monitoring
+            c. trending
+            d. upgrades/packages
+            e. SLA/uptime
+            f. names/physical locations
+
+6. Network Devices
+            a. configuration management
+            b. capacity
+            c. latency
+            d. redundancy
+            e. service contracts & vendor support
+            f. names/physical locations
+
+6. Tools
+            a. standards based
+            b. maintainability
+            c. extensibility
+            d. documented
+
+***/IT Check Off Sheet***
+
+***Operational Review***
+
+Organization/People/Skills 
+Security Practices and Audit 
+Storage Topics Plan and Strategy 
+Backups and Snapshots
+Processes and Procedures 
+Load and Load Balancing 
+Single Point of Failure Discussion, Analysis and Plan for reduction 
+Disaster Recovery 
+External and Internal Monitoring
+   
+***/Operational Review***
+ 
+***Simple ITIL Steps***
+
+Create the fewest process projects necessary to enable sustaining improvement. Each project must meet the following criteria:
+
+1) Definitive – having a clearly defined objective
+2) Ordered – designed to build on previous phases
+3) Catalytic – returns more resources to organization than it consumes
+4) Auditable – generates on-going documentation to prove controls are working and effective
+5) Sustaining – creates enough value in organization that developed processes remain after initial driving implementation forces disappear
+
+Phase I Change Control (“Stabilizing the Patient”)
+
+1) Determine % of unplanned work from total work performed
+2) Triage by identifying critical systems generating the greatest amount of unplanned work
+3) Document simple clear change policy “Absolutely no changes to identified critical systems unless authorized by me”
+4) Notify stakeholders and distribute policy to staff and publish openly
+5) Create regular change windows when changes to production systems can be made and emergency change procedures
+6) Remove or eliminating access to non-authorized staff members
+7) Reinforce the process (electrify the fences and work to keep cowboys out of the saddle)
+
+Phase II Inventory Production Assets (“Catch, Release, and Preserve”)
+	
+1)	Create inventory/asset tracking documentation for processes and systems (function; outage costs; location; build anomalies; change success rate; dependencies)
+2)	Catch, release, and document processes in documentation as quickly as possible without stopping work flow as this may force people to subvert the process: freeze and inventory quickly combined with controlled change capture via change review board/process to achieve this
+3)	Preserve fragile artifacts when they are found by clearly identifying them so as to avoid changing them in future (this will be of value in change release review)
+4)	Prevent further mutation by controlling configuration drift over time
+i.e. certain production “foods” spoil over time without appropriate “refrigeration” control 
+
+Phase III Create Build/Process Catalogs (“Scientists, Firefighters, and Libraries”)
+	
+1)	Reduce the number of scientists working as firefighters by creating simplified, documented, repeatable build correction activities for non- scientists to complete
+2)	Take the freed up scientists firefighters and make them fire wardens, fire safety engineers, and part time authors
+3)	Make it cheaper to rebuild than to repair fire damage as rebuilding keeps images cleaner than repairing them
+4)	Build, stock, and maintain a definitive organizational software library from simplified documented builds and actions
+
+Phase IV Improvement Metrics (“It is easy to lie with statistics, but it is easier still to lie without them” Frederick Mosteller 1916 – 2006))
+
+1)	Release metrics
+a)	% systems matching good build
+b)	% of builds with security signoff
+c)	Build shelf life
+2)	Control metrics
+a)	# of actual changes per week
+b)	# of authorized changes per week
+c)	# of unauthorized changes per week
+d)	% of unauthorized change
+e)	% of successful change
+f)	% of unsuccessful change
+3)	Resolution metrics
+a)	Mean Time to Repair (MTTR)
+b)	Mean Time Between Failures (MTBF)
+
+***/Simple ITIL Steps***
+
+***Business Mantra***
+1) can you sell your products (marketing, customer management, channel partners...etc)? 
+2) can you deliver your products (design, code, proj management, customer needs...etc)?
+3) See step 1...all else is secondary.
+
+***DBA Job Posting***
+
+The DBA will be part of the database team responsible for supporting the current MySQL and MS SQL Server infrastructure. This will include all operational database monitoring, tuning, and capacity planning for production systems.
+
+A little about the role:
+
+    * Ensuring all maintenance, system integrity and space requirements for OpenMarket database environments are met
+    * Reviewing schema design and data definitions for production systems
+    * Evaluating and recommending database hardware and software
+    * Working directly with developers on related database initiatives
+    * Monitoring and performance tuning of production database systems
+    * Participating in a 24/7 rotating on call cycle supporting production database operations
+
+Skills and experience you should be bringing to the table:
+
+    * 3+ years experience with relational databases in a production environment
+    * Solid understanding of major components in relational database architecture
+    * Experience in database backup, restore, and disaster recovery procedures
+    * Experience with analyzing and tuning databases for performance and efficiency
+    * Troubleshooting and communication skills are crucial to the success of this position
+
+Related experience and knowledge it would be nice to have:
+
+    * Previous experience with large data sets and high transaction environments
+    * Experience with multiple database platforms
+    * Knowledge of various database replication and clustering methods
+    * Knowledge of and/or previous experience with Linux or UNIX
+    * Undergraduate degree with a technology, engineering, or mathematical focus
+
+Preferable Job Qualifications:
+
+This role will be ideal for someone who is looking to take the next step in their career. 
+You should be aiming to be a guru in most operational database procedures and become a "go-to" database person. 
+You are bright, talented, energetic, and work well in a team environment.
+
+
+***Need to discuss prior to starting DBA role***
+Automated backup/restore
+                Completed
+Database monitoring and alerting
+                Completed
+Database performance review
+                Completed
+Capacity planning
+                Completed
+On-call alert tracking and trends
+                Completed
+More than 1 person in rotation of on-call if on-call support is required
+                Completed
+Outage resolution tracking
+                Completed
+Release control in place or organization is willing to add
+                Completed
+Change approval processes in place or organization is willing to add
+                Completed
+Tiered response system or organization is willing to add when needed
+                Completed
+Recent turnover for positions sufficiently explained
+                Completed
+***/Need to discuss prior to starting DBA role***
+
+***Database Administration Questions to Resolve***
+How fast will application grow the database size and load?
+                +200MB per day with minimal server load on master db
+Does the application cause data growth & shrinkage within the database not just growth?
+                No shrinkage or removal of data and data size only grows
+What is an acceptable application response time?
+                Undefined as V.2 development was under way until launch
+How well does write/read i/o perform at load, query, and backup time? What is the application response during those times?
+				Write acceptable for master hardware;  Read only acceptable for slave hardware; backups done at 02:00 and 02:30 to minimize impact
+What is the expected application reliability and/or SLA?
+                Expected 99.9% for application with no known current SLA
+What is the expected mean time to recover the application?
+				3-4 hours for full database restore from archived backup
+When are the scheduled maintenance windows?
+                N/A; currently ad-hoc application code pushes during the day and some after hours (>23:00 hrs) maintenance
+What database monitoring and alerting exists?
+                Nagios + Cacti
+Is there a backup/restore process; is it automated; what is the archive retention period?
+                Yes; Automated via crontab; 2 week retention based on current space requirements
+What are PII, legal, and financial security concerns of the data stored?
+                None currently known…open issue for the future
+How are platform based database security issues handled?
+                Consistent secure download binaries; none built from source
+How are code based database security issues handled?
+                Consistent secure download binaries; none built from source
+How are login based database security issues handled?
+                Not fully addressed due to time to market concerns; non operations personnel still has access to production
+***/Database Questions to Define***
+
+***Database Ongoing Support Checklist***
+
+DB consistency check scripts in place?
+                Unable to implement due to I/O constraints on read servers…work around is periodic restore of binary backup of master and slave to check integrity
+DB growth scripts in place?
+                Yes; daily table size sample automated from cron at 01:00
+Automated backup/restore scripts in place?
+                Yes; daily backups automated from cron at 02:00 and 02:30
+DB performance tracking scripts in place?
+                Yes; Cacti
+DB monitoring & alerting scripts in place?
+                Yes; Nagios
+Consistent build processes in place?
+                Partial; PDS has no process for database DDL application so DDL is manually applied
+Packaged uniform code deployments to staging and production?
+                Partial;  PDS has no process for database DDL application so DDL is manually applied
+Consistent management tools across database platforms?
+                Yes
+Consistent service/security pack/patch levels across the platform?
+                Yes; Version 5.0.51
+SQL Injection attack prevention in place?
+                No; currently security is 100% reliant on application code integrity
+User use/abuse of application logins resolved?
+                No; not fully addressed due to time to market concerns; non operations personnel has access to production
+Implementation of security groups with individuals assigned to groups if DB platform supports it?
+                Security groups not supported by DBMS platform (MySQL)
+Routine database processes and procedures documented and repeatable?
+                Yes
+Operations brown and black out DR procedures documented?
+                N/A
+***/Database Ongoing Support Checklist***
+
+---General Developer SQL Interview Questions ---
+
+SQL Syntax:
+
+Q. What is the difference between an INNER and an OUTER join?
+A. An inner join returns row that have a matching values in the field on which the tables are joined. An outer join is a join where all rows are included in the results even if they don’t match the join condition.
+
+Follow up question: What are some other kinds of joins?
+Follow up answer: As long as the answers are factually accurate, all answers are okay. If they provide joins that are functional duplicates, ask them to explain the difference between them.
+
+Q. What is the effect of a HAVING clause in a query?
+A. It restricts the rows returned by a GROUP BY query. 
+
+Follow up question: What type of restrictions should be used in the HAVING? 
+Follow up answer: Only conditions that involve an aggregation.
+
+Q. What is a SQL sub query?
+A. Varied answers. Basics to look for are 1) nesting 2) location in statement. The more in depth they go, the better as long as it’s accurate. 
+
+Follow up question: What are some differences between ANSI standard sub queries and various RDBMS platform implementations. 
+Follow up answer: As long as the answers are factually accurate, all answers are okay.
+
+SQL Whiteboard Coding:
+
+With a table called "Project" with the columns "project_id (int)", "project_start (date)", "project_end (date)", write a SQL statement that will find all the project dates that run consecutively.
+	 
+With a table called "Product" with the columns "name (varchar)", "price (int)", "location (varchar)" in it, write a SQL statement that would display the product name, the words "overpaid" if price is over 150 , "underpaid" if price is under 50 , or "normal" if is it between those two values, and sort the result set by where the products are located.
+
+SQL Experience:
+
+Q. What is your approach to tuning a query?
+A. Varied answers. Basics to look for are 1) mention of a query plan 2) how they generate a query plan for at least one RDBMS platform. If they don't know 1) or 2), probe with open ended questions about what they think might make a difference in SQL statement performance. 
+
+Follow up question: Provide them with a query plan, and have them explain it to you.
+Follow up answer: The more in depth they go, the better. Bonuses for explanations of indexing variations, cost based optimization in general, and database statistics effects.
+
+Q. Can you remember the situation where you wrote SQL that performed poorly in production? Describe the situation, the mistakes made, and what you learned.
+A. Everybody shown have experience with written something that performed not the way they thought it would. Key things to look for are 1) mistake acknowledgement 2)  mistake details i.e. it should have left an impression such that they remember some part of it 3) a positive value they took away from a negative situation
+
+---/General Developer Interview Questions ---
+
+---Password Rules---
+
+1. Use unique passwords for all your accounts
+2. Use random passwords
+3. Use a password manager
+4. Turn on two-step verification everywhere you can
+5. Make sure your software has current updates installed
+6. Put a six-digit PIN on your phone and set it to wipe if it’s guessed wrongly too many times
+7. Enable full-disk encryption
+8. Back-up to an external hard drive
+
+---/Password Rules---

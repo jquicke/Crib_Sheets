@@ -1,0 +1,1332 @@
+Version: 09.27.13
+Started: 09.27.05
+
+###VB###
+
+------------------------
+--- get disk space
+
+dim pcname, filesys, text
+
+'create filesystemobjec
+set filesys = CreateObject("Scripting.FileSystemObject")
+
+'Set variable pc name
+pcname = inputbox("Enter PC Name") 
+
+Set text = filesys.CreateTextFile("C:\TempPCoutput.txt")
+text.Writeline "PC DisK Stats"
+text.Writeline " "
+
+strComputer = pcname
+Set objWMIService = GetObject("winmgmts:" _
+    & "{impersonationLevel=impersonate}!\\" _
+    & strComputer & "\root\cimv2")
+Set colDisks = objWMIService.ExecQuery _
+    ("Select * from Win32_LogicalDisk")
+For Each objDisk in colDisks
+    text.Writeline "DeviceID: " & objDisk.DeviceID
+    text.Writeline "Volume Name: " & objDisk.VolumeName 
+  text.Writeline "TotalSize: " _
+        & ((objDisk.size/1024)/1024)/1024 & " GB's"
+    text.Writeline "Free Disk Space: " _
+        & ((objDisk.FreeSpace/1024)/1024)/1024 & " GB's"
+    text.Writeline ""
+	
+Next
+
+Set objShell = CreateObject("WScript.Shell")
+objShell.Run "notepad C:\TempPCoutput.txt" 
+------------------------
+' Script reads c:\scripts\server_list.txt, collects information using WMI Service, and writes results to c:\scripts\server_output.txt
+
+dim objFileIn, objFileOut
+On Error Resume Next
+Const ForReading = 1
+
+'create filesystemobjects
+set objFSOin = CreateObject("Scripting.FileSystemObject")
+Set objFSOout = CreateObject("Scripting.FileSystemObject")
+
+' open file for input
+Set objFileIn = objFSOin.OpenTextFile("c:\scripts\server_list.txt", ForReading)
+strComputer = objFileIn.ReadAll
+
+' open file for output and write header
+Set objFileOut = objFSOout.CreateTextFile("c:\scripts\server_output.txt", True)
+objFileOut.Writeline "====================================="
+objFileOut.Writeline "ServerName : Operating System Version"
+objFileOut.Writeline "====================================="
+objFileOut.Writeline ""
+
+'create array of server host names
+arrComputers = Split(strComputer, vbCrLf)
+Set objShell = CreateObject("WScript.Shell")
+For Each strComputer In arrComputers
+
+' check the server is reachable
+    strCommand = "%comspec% /c ping -n 3 -w 1000 " & strComputer
+    Set objExecObject = objShell.Exec(strCommand)
+    strText = objExecObject.StdOut.ReadAll
+    If Instr(strText, "Reply") > 0 Then
+
+' make the query
+        Set objWMIService = GetObject _
+            ("winmgmts:\\" & strComputer & "\root\cimv2")
+        Set colItems = objWMIService.ExecQuery _
+            ("Select * From Win32_OperatingSystem")
+        For Each objItem In ColItems
+            objFileOut.Writeline strComputer & " : " & objItem.Caption
+	    objFileOut.Writeline ""
+	    objFileOut.Writeline strComputer & " : " & objItem.Caption
+	    objFileOut.Writeline ""
+        Next
+    Else
+
+' output error when the server is not found
+        objFileOut.Writeline strComputer & " could not be reached."
+	objFileOut.Writeline ""
+    End If
+Next
+
+' close those file objects
+objFileIn.Close
+objFileOut.Close
+------------------------
+
+###/VB###
+
+###PERL###
+
+--------------------
+***PERL SCRIPTS***
+--------------------
+#!/usr/bin/perl 
+
+use strict;
+
+my $dir = $ARGV[0];
+opendir(DIR, $dir);
+my $file;
+while($file = readdir(DIR)) {
+	next if($file =~ /^\./);
+	next if(-d $file);
+	open(LIST,$dir\/$file) or die "Can't open the input file\n";
+	open(OUTFILE,"> $dir\/out\/$file") or die "Can't create output file\n";
+	while(my $row = <LIST>) {
+        	my @mod_row = split(/\s+/, $row);
+		my $datekey = $mod_row[1] + 1;
+		print OUTFILE ("$mod_row[0] $datekey $mod_row[2] $mod_row[3] $mod_row[4] $mod_row[5]\n");
+        }
+	close(OUTFILE);
+	close(LIST);
+}
+close(DIR);
+--------------------
+#!/usr/bin/perl 
+
+open(INFILE,"one_day.txt") or die "Can't open the input file\n";
+open(OUTFILE,"> out/one_month.out") or die "Can't create output file\n";
+while(my $row = <INFILE>) {
+        chomp $row;
+        my @mod_row = split(/\|/, $row);
+        my $col0 = $mod_row[0];
+        my $col1 = $mod_row[1];
+        my $col2 = $mod_row[2];
+        my $col3 = $mod_row[3];
+        my $col4 = $mod_row[4];
+        my $count = 0;
+        while($count < 30) {
+		my $date_mod = $col1 + $count;
+		print OUTFILE ("$col0|$date_mod|$col2|$col3|$col4\n");
+        	$count++;
+	}
+}
+close(OUTFILE);
+close(INFILE);
+--------------------
+#!/usr/bin/perl 
+
+use strict;
+
+my $dir = $ARGV[0];
+opendir(DIR, $dir);
+my $file;
+while($file = readdir(DIR)) {
+        next if($file =~ /^\./);
+        next if(-d $file);
+        open(LIST,$dir\/$file) or die "Can't open the input file\n";
+        open(OUTFILE,"> $dir\/out\/$file") or die "Can't create output file\n";
+        while(my $row = <LIST>) {
+                my @mod_row = split(/\s+/, $row);
+                my $datekey = $mod_row[1] + 1;
+                print OUTFILE ("$mod_row[0] $datekey $mod_row[2] $mod_row[3] $mod_row[4] $mod_row[5]\n");
+        }
+        close(OUTFILE);
+        close(LIST);
+}
+close(DIR);
+--------------------
+#!/usr/bin/perl 
+
+open(LIST,"2004-0.txt") or die "Can't open the input file\n";
+open(OUTFILE,"> out/2004-0.out") or die "Can't create output file\n";
+while(<LIST>) {
+        split;
+        $datekey = 12419;
+        $count = 0;
+        while($count < 365) {
+                $date_mod = $datekey + $count;
+                print OUTFILE ("$_[0] $date_mod $_[2] $_[3] $_[4] $_[5]\n");
+                $count++;
+        }
+}
+close(OUTFILE);
+close(LIST);
+--------------------
+
+#!/usr/contrib/bin/perl -w
+
+open(LIST,"/tmp/jmq/payment.txt") or die "Can't open the input file\n";
+open(OUTFILE,"> /tmp/jmq/new_payment.txt") or die "Can't create output 
+file\n";
+while(<LIST>) {
+        $name = $_;
+        chomp $name;
+        print OUTFILE ("$name,\n");
+        }
+close(OUTFILE);
+close(LIST);
+
+--------------------
+
+#!/usr/local/bin/perl -w
+open(LIST,"names.txt") or die "Can't open the input file\n";
+open(OUTFILE,"> bcp_table.sh") or die "Can't create output file\n";
+while(<LIST>) {
+        $name = $_;
+        chomp $name;
+        print OUTFILE ("bcp HRPROD..$name out $name.out -Usa -Plolly99
+-RTAHR -c\n");
+        }
+close(OUTFILE);
+close(LIST);
+
+--------------------
+
+#!/usr/local/bin/perl -w
+use strict;
+
+#
+#  Define the desired search directory,   
+#  output directory, and output file here 
+#
+
+my $search_dir = "/filers/filer3-1/users/ahopkins/";
+my $output_dir = "/var/tmp/jmq";
+my $output_file = "$output_dir/out_file.txt";
+
+#
+#   Don't edit beyond this point           
+#
+
+my $total_space = 0;
+open(OLIST, ">$output_file") || die "Can't open: $!";
+
+use File::Find;
+
+find(\&cleanup, "$search_dir");
+print "files are using $total_space bytes\n";
+
+close(OLIST);
+
+# Subroutine that determines if we match the file extensions
+sub cleanup {
+        if ((/\.mp3$/) || (/\.avi$/) || (/\.mpeg$/) || (/\.mov$/) ||
+(/\.wmv$/) || (/\.asv$/) || (/\.wav$/))
+                {
+                my $size  = -s $File::Find::name;
+                print OLIST "$File::Find::name", "  ", $size, "\n";
+                $total_space += $size;
+                }
+}
+--------------------
+
+#!/usr/bin/perl
+
+open(INFILE,"/home/jquicke/recon_vol.txt") or die "Can't open the input file\n";
+open(OUTFILE,"> /home/jquicke/recon_vol.out") or die "Can't create output file\n";
+while(my $row = <INFILE>) {
+        chomp $row;
+        my @mod_row = split(/\|/, $row);
+        print OUTFILE ("vol create /vol/vol_hq_sqlclone1_$mod_row[0] -l en -s none aggr1 $mod_row[1]$mod_row[2]\n");
+}
+close(OUTFILE);
+close(INFILE);
+
+--------------------
+--  one line 
+-- sums up file values in one line
+perl -e '$i=0;while (<>) {$i = $i + $_; } print "$i\n";' !$
+perl -e '$i=0;while (<>) {$i = $i + $_; } print "$i\n";' /tmp/jmq/property_random.txt
+--------------------
+--  one line
+-- reverses a list of  ip addresses for dns entries
+perl -nle 'print join(".",reverse split /\./) < ip_list.txt
+perl -nl  -- new line at end of line and integral while loop (work on each line)
+--------------------
+-- reverses a list of  ip addresses for dns entries
+#!/usr/bin/perl
+
+open(INFILE,"file.txt") or die "Can't open the input file\n";
+open(OUTFILE,"> file.out") or die "Can't create output file\n";
+while(my $row = <INFILE>) {
+  chomp $row;
+  my @mod_row = split(/\./, $row);
+  my $col0 = $mod_row[0];
+  my $col1 = $mod_row[1];
+  my $col2 = $mod_row[2];
+  my $col3 = $mod_row[3];
+  print OUTFILE ("$col3.$col2.$col1.$col0\n");
+}
+close(OUTFILE);
+close(INFILE);
+-------------------
+#!/usr/bin/perl
+$num = "-" x 80;
+print $num;
+--------------------
+#!/usr/bin/perl
+$num1 = "this is a";
+$num2 = "test";
+$num3 = $num1 . $num$
+--------------------
+
+***Check Disk Space Perl script***
+
+#!/usr/bin/perl
+
+# SCRIPT NAME:    checkDiskSpace.pl
+
+#########################################
+
+use strict;
+use warnings;
+
+################
+## Prototypes ##
+################
+
+sub sendEmail($$$$);
+
+################
+##    Main    ##
+################
+
+## This is the location of the drive passed as a parameter my $mountPoint = shift;
+
+## Get the hostname
+my $hostname = `hostname`;
+
+my $to		= "";
+my $from	= "";
+my $subject	= "";
+my $message	= "";
+
+## The command
+my $cmd = "df -h | grep " . $mountPoint;
+
+## Run the command
+my $result = `$cmd`;
+
+## Split results from command into an array my @lines = split("\n", $result);
+
+foreach(@lines)
+{
+	if ($_  =~ m/([0-9]{1,3})%/) 
+	{
+		## If greater than 98%, This is set to a higher number due to it should not change
+		if ($1 > 99) 
+		{
+                	$to              = "support\@openmarket.com";
+                	$from            = "troppus\@openmarket.com";
+                	$subject         = "Hard Disk Space Issue on: $hostname";
+               	 	$message         = "Hello Support,\n\n";
+                	$message        .= "     There is a space issue on $hostname\n\n";
+                	$message        .= "     Please check this location: $mountPoint it is at $1 %\n\n";
+                	$message        .= "HOW TO CHECK:\n";
+                	$message        .= "     Log into the server listed in this email and goto the root directory\n";
+                	$message        .= "TYPE: cd / \n";
+                	$message        .= "     Now run the df -h command and double check disk space\n";
+                	$message        .= "     If the disk space is an issue please raise a ticket to ops\n\n";
+                	$message        .= "Thanks,\nPhill Pafford";
+                	$message        .= "\n\n\nThis message has been auto generated\n\n";
+
+			&sendEmail($to, $from, $subject, $message);
+		} 
+		else 
+		{
+                	$to              = "phill.pafford\@openmarket.com";
+                	$from            = "troppus\@openmarket.com";
+                	$subject         = "Hard Disk Space on $hostname is OK";
+                	$message         = "Hello Support,\n\n";
+               	 	$message        .= "     Hard Disk Space is ok it is at $1 % (98% to 99% is an OK level)\n\n";
+                	$message        .= "Thanks,\nPhill Pafford";
+                	$message        .= "\n\n\nThis message has been auto generated\n\n";
+
+			&sendEmail($to, $from, $subject, $message);
+		}
+		exit;
+	}
+}
+
+print "Couldn't find mount point!\n";
+
+$to		 = "phill.pafford\@openmarket.com";
+$from            = "troppus\@openmarket.com";
+$subject         = "Couldn't find mount point on: $hostname for checkDiskSpace.pl, Please double check the mount point";
+$message         = "Hello Support,\n\n";
+$message        .= "     Please double check the mount point: $mountPoint\n\n";
+$message        .= "     on Server: $hostname\n\n";
+$message        .= "     to make sure it is valid. Please check the cron tab (Most likely running in root) and double check the\n\n";
+$message        .= "     mount point being passed as a parameter.\n\n";
+$message        .= "Thanks,\nPhill Pafford";
+$message        .= "\n\n\nThis message has been auto generated\n\n";
+
+&sendEmail($to, $from, $subject, $message);
+
+
+################
+## Functions  ##
+################
+
+# Simple Email Function
+# ($to, $from, $subject, $message)
+sub sendEmail($$$$)
+{
+        my ($to, $from, $subject, $message) = @_;
+        my $sendmail = '/usr/lib/sendmail';
+        open(MAIL, "|$sendmail -oi -t");
+        print MAIL "From: $from\n";
+        print MAIL "To: $to\n";
+        print MAIL "Subject: $subject\n\n";
+        print MAIL "$message\n";
+        close(MAIL);
+}
+
+***Check Disk Space Perl script***
+
+
+***Check MySQL MyISAM Perl script***
+
+#!/usr/bin/perl -w
+use strict;
+use DBI;
+use Getopt::Long;
+
+my $options;
+$options->{'host'} = 'server';
+$options->{'user'} = 'user';
+$options->{'pass'} = 'password';
+$options->{'warn'} = 50;
+$options->{'crit'} = 80;
+$options->{'debug'} = 0;
+$options->{'port'} = 3306;
+my $result = GetOptions ($options, 'host=s', 'user=s', 'pass=s', 'warn=i', 'crit=i', 'debug=i', 'port=i', 'help');
+
+my $dsn = sprintf "DBI:mysql:host=%s;port=%s", $options->{'host'}, $options->{'port'};
+
+
+sub debug {
+	my ($debug, $message) = @_;
+	return unless (defined($options->{'debug'}) && ($options->{'debug'} =~ /^\d+$/));
+	return unless (defined($debug) && ($debug =~ /^\d+$/));
+	return unless $debug <= $options->{'debug'};
+	warn unless defined $message;
+	my $caller = (caller(1))[3];
+	printf "%s: %s\n", $caller || "Main", $message;
+}
+
+sub db_connect {
+	debug(5, "Using $dsn");
+	my $dbh = DBI->connect($dsn, $options->{'user'}, $options->{'pass'}, {RaiseError => 1});
+	if (not $dbh) {
+		printf "Unable to connect to DB host %s:%s", $options->{'host'}, $options->{'port'};
+		exit 3;
+	}
+	debug(3, sprintf "Connected to DB host %s:%s", $options->{'host'}, $options->{'port'});
+	return $dbh;
+}
+
+sub get_table_sizes {
+	my $dbh = shift;
+	my $db = shift;
+	my $sql = sprintf "show table status from %s", $db;
+	debug(6, "$sql");
+	my $sth = $dbh->prepare($sql);
+	my $res = $sth->execute;
+	my $sizes;
+	while (my $ref = $sth->fetchrow_hashref) {
+		debug(7, join(', ', keys(%{$ref})));
+		if ($ref->{'Engine'} ne "MyISAM") {
+			debug(5, "Skipping non MyISAM table");
+			next;
+		}
+		$sizes->{$ref->{'Name'}}->{'max'} = $ref->{'Max_data_length'};
+		$sizes->{$ref->{'Name'}}->{'cur'} = $ref->{'Data_length'};
+		debug(6, sprintf "Looking at %s, size is %d, max is %.0f", $ref->{'Name'}, $ref->{'Data_length'}, $ref->{'Max_data_length'});
+		$sizes->{$ref->{'Name'}}->{'pct'} = ($sizes->{$ref->{'Name'}}->{'cur'} / $sizes->{$ref->{'Name'}}->{'max'}) * 100;
+	}
+
+	my $exit_code = 0;
+	my $exit_message;
+	foreach (keys %{$sizes}) {
+		if ($sizes->{$_}->{'pct'} >= $options->{'crit'} ) {
+			$exit_message.= sprintf "%s:%s:  %2.2f%%! ", $db, $_, $sizes->{$_}->{'pct'};
+			$exit_code = 2;
+		} elsif ($sizes->{$_}->{'pct'}  >= $options->{'warn'} ) {
+			$exit_message.= sprintf "%s:%s:  %2.2f%%. ", $db, $_, $sizes->{$_}->{'pct'};
+			$exit_code = 1 if $exit_code < 1;
+		} else {
+			# say nothing.
+			debug(5, sprintf "%s: %2.8f%%", $_, $sizes->{$_}->{'pct'});
+		}
+	}
+	return $exit_code, $exit_message;
+}
+
+
+sub get_databases {
+	my $dbh = shift;
+	my $sql = "show databases";
+	my $sth = $dbh->prepare($sql);
+	my $res = $sth->execute;
+	my $exit_message;
+	my $exit_code = 0;
+	while (my $ref = $sth->fetchrow_hashref) {
+		debug(4, "Found database " . $ref->{Database});
+		my ($new_code, $new_message) = get_table_sizes($dbh, $ref->{Database});
+		$exit_message .= $new_message if $new_message;
+		$exit_code = $new_code if $new_code > $exit_code;
+	}
+	if ($exit_message) {
+		print $exit_message . "\n";
+		exit $exit_code;
+	} 
+	print "OK\n";
+	exit $exit_code;
+}
+
+sub help {
+	my $name = $0;
+	print <<FOO;
+$name [ --help ] [ --port <n> ] [ --host <name> ] [ --user <name> ] [ --pass <pass> ] 
+    [ --warn <i> ] [ --crit <i> ] [ --debug <i> ]
+
+Checks for MyISAM tables in MySQL, and sees how 'full' they are based upon the maximum 
+current table space and the number of rows currently there. It is essentially a SQL query 
+of "show table status like <name>", acorss all tables in all databases.
+
+
+	--port <n>	Port number of MySQL to connect to
+	--user <name>	MySQL account to use
+	--pass <pass>	MySQL password for the user
+	--warn <i>	Percentage to consider a warning level, 0..100
+	--crit <i>	Percentage to consider critical level, 0..100, higher than warn!
+	--debug <i> 	Debug level, the higher the more rubbish we print out
+
+FOO
+}
+
+if (defined $options->{help}) {
+	help();
+	exit;
+	}
+my $dbh = db_connect();
+get_databases($dbh);
+
+***/Check MySQL MyISAM Perl script***
+
+***Check MySQL Activity Perl script***
+
+#!/usr/bin/perl -w
+use strict;
+use DBI;
+use Getopt::Long;
+
+my $options;
+$options->{'host'} = 'server';
+$options->{'user'} = 'user';
+$options->{'pass'} = 'password';
+$options->{'warnconns'} = 50;
+$options->{'critconns'} = 80;
+$options->{'warnrun'} = 25;
+$options->{'critrun'} = 40;
+$options->{'debug'} = 0;
+$options->{'port'} = 3306;
+my $result = GetOptions ($options, 'host=s', 'user=s', 'pass=s', 'warnconns=i', 'critconns=i', 'warnrun=i', 'critrun=i', 'debug=i', 'port=i', 'help');
+
+my $dsn = sprintf "DBI:mysql:host=%s;port=%s", $options->{'host'}, $options->{'port'};
+
+
+sub debug {
+	my ($debug, $message) = @_;
+	return unless (defined($options->{'debug'}) && ($options->{'debug'} =~ /^\d+$/));
+	return unless (defined($debug) && ($debug =~ /^\d+$/));
+	return unless $debug <= $options->{'debug'};
+	warn unless defined $message;
+	my $caller = (caller(1))[3];
+	printf "%s: %s\n", $caller || "Main", $message;
+}
+
+sub db_connect {
+	debug(5, "Using $dsn");
+	my $dbh = DBI->connect($dsn, $options->{'user'}, $options->{'pass'}, {RaiseError => 1});
+	if (not $dbh) {
+		printf "Unable to connect to DB host %s:%s", $options->{'host'}, $options->{'port'};
+		exit 3;
+	}
+	debug(3, sprintf "Connected to DB host %s:%s", $options->{'host'}, $options->{'port'});
+	return $dbh;
+}
+
+sub get_processes {
+	my $dbh = shift;
+	my $connections = 0;
+	my $running_threads = 0;
+	my $sql = "show processlist";
+	my $sth = $dbh->prepare($sql);
+	my $res = $sth->execute;
+	my $exit_message;
+	my $exit_code = 0;
+	while (my $ref = $sth->fetchrow_hashref) {
+		debug(4, "Found process " . $ref->{'Id'});
+		$connections += 1;
+		if ($ref->{'Command'} ne "Sleep" 
+		    and $ref->{'Command'} ne "Delayed insert"
+		    and $ref->{'Command'} ne "Binlog Dump") {
+		    $running_threads += 1;
+		}
+	}
+
+	if ($connections >= $options->{'critconns'}) {
+	    $exit_message .= sprintf "%d connections (CRIT=%d). ", $connections, $options->{'critconns'};
+	    $exit_code = 2 if $exit_code < 2;
+	}
+	elsif ($connections >= $options->{'warnconns'}) {
+	    $exit_message .= sprintf "%d connections (WARN=%d). ", $connections, $options->{'warnconns'};
+	    $exit_code = 1 if $exit_code < 1;
+	}
+
+	if ($running_threads >= $options->{'critrun'}) {
+	    $exit_message .= sprintf "%d running threads (CRIT=%d). ", $running_threads, $options->{'critrun'};
+	    $exit_code = 2 if $exit_code < 2;
+	}
+	elsif ($running_threads >= $options->{'warnrun'}) {
+	    $exit_message .= sprintf "%d running threads (WARN=%d). ", $running_threads, $options->{'warnrun'};
+	    $exit_code = 1 if $exit_code < 1;
+	}
+
+	if ($exit_message) {
+	    if ($exit_code == 1) {
+		print "WARNING: " . $exit_message . "\n";
+	    }else{
+		print "CRITICAL: " . $exit_message . "\n";
+	    }
+	    exit $exit_code;
+	} 
+	print "OK: connections - " . $connections . ", active threads - " . $running_threads . "\n";
+	exit $exit_code;
+}
+
+sub help {
+	my $name = $0;
+	print <<FOO;
+$name [ --help ] [ --port <n> ] [ --host <name> ] [ --user <name> ] [ --pass <pass> ] 
+    [ --warnconns <i> ] [ --critconns <i> ]
+    [ --warnrun <i> ] [ --critrun <i> ] [ --debug <i> ]
+
+Checks a MySQL database server for the number of connections and running threads.
+
+	--port <n>	Port number of MySQL to connect to
+	--user <name>	MySQL account to use
+	--pass <pass>	MySQL password for the user
+	--warnconns <i>	Warn threshhold for client connections
+	--critconns <i>	Critical threshhold for client connections
+	--warnrun <i>	Warn threshhold for running queries
+	--critrun <i>	Critical threshhold for running queries
+	--debug <i> 	Debug level
+
+FOO
+}
+
+if (defined $options->{help}) {
+	help();
+	exit;
+	}
+my $dbh = db_connect();
+get_processes($dbh);
+
+***/Check MySQL Activity Perl***
+
+***Perl MySQL check for NDB database issues***
+
+#!/usr/bin/perl
+#
+# config entries
+#
+$ndb_dir="/var/lib/mysql-cluster";
+$NDB_MGM="/usr/local/mysql/bin/ndb_mgm";
+
+$TAG="mysql_cluster";
+$CUSTOMER="CUSTOMER";
+$SERVICE="SERVICE";
+$PRIO="user.notice";
+
+$VAL_FATAL=95;
+$VAL_CRIT=90;
+$VAL_WARN=80;
+
+$SC_FATAL="FATAL";
+$SC_CRIT="CRITICAL";
+$SC_WARN="WARNING";
+$SC_INFO="INFO";
+$SC_OK="OK";
+$SC_DEBUG="DEBUG";
+
+sub get_status {
+
+  my $maxdata=shift || 0;
+  my $maxindex=shift || 0;
+  my $exitcode=0;
+  my $SC=$SC_OK;
+
+  if (($maxdata >= $VAL_WARN) || ($maxindex >= $VAL_WARN)) {
+    $SC=$SC_WARN;
+    $exitcode=1;
+  }
+  # Don't use else here - we want highest of either to set the value.
+  if (($maxdata >= $VAL_CRIT) || ($maxindex >= $VAL_CRIT)) {
+    $SC=$SC_CRITICAL;
+    $exitcode=2;
+  }
+  if ( ($runstyle eq "syslog") && ( $maxdata >= $VAL_FATAL ) ){
+    $SC=$SC_FATAL;
+    $exitcode=2;
+  }
+
+  return wantarray ?  ($SC,$exitcode) : $SC;
+}
+# no more config entries below
+
+$runstyle = shift || "syslog";
+
+if ($runstyle eq "syslog" ) {
+  use Sys::Syslog;
+  openlog($TAG,'pid,cons','user');
+}
+# configuration checks
+if ( ! -r glob("$ndb_dir/ndb_*_cluster.log") ) {
+  print "Can't read cluster log in $ndb_dir\n";
+  exit 3 ;
+}
+if ( ! -x "$NDB_MGM" ) {
+  print "Can't execute management client $NDB_MGM\n";
+  exit 3 ;
+}
+
+#
+# monitor cluster log while script is running
+"check_ndb.pl" 122 lines, 2806 characters
+
+***/MySQL check for NDB database issues***
+
+***Jerome's bench for NDB database updates***
+
+#!/usr/bin/perl
+
+use DBI;
+
+# database information
+$db="zillow";
+$host="127.0.0.1";
+$port="3306";
+$userid="root";
+$passwd="";
+$connectionInfo="DBI:mysql:database=$db;$host:$port";
+
+# make connection to database
+$dbh = DBI->connect($connectionInfo,$userid,$passwd);
+
+for($i=0;$i<10000;$i++) {
+# prepare and execute query
+$j=int(rand()*60000000);
+
+$query = "update counter set hits=hits+1 where propertyid=$j";
+$sth = $dbh->prepare($query);
+$sth->execute();
+
+$query = "SELECT * FROM counter where propertyid=$j";
+$sth = $dbh->prepare($query);
+$sth->execute();
+
+# assign fields to variables
+$sth->bind_columns(undef, \$propertyid, \$result);
+
+# output computer list to the browser
+while($sth->fetch()) {
+   print "$result ";
+}
+
+}
+
+$sth->finish();
+
+# disconnect from database
+$dbh->disconnect;
+
+***/Jerome's bench for NDB database updates***
+
+---- reverses ip addresses written for dns server
+
+#!/usr/bin/perl
+#
+while(<>) {
+        s/\s+$//;
+        my(@ip);
+        my($host,$in,$a,$ip) = split(/\s+/);
+        if($host =~ /^lyn-del/) {
+                #print "$host\t$ip\n";
+                @ip = split(/\./, $ip);
+                print "$ip[3]\.$ip[2]\.$ip[1]\tIN\tPTR\t$host\.del.uni.lyn.zillow.com.\n";
+        } elsif($host =~ /^lyn-sta/) {
+                #print "$host\t$ip\n";
+                @ip = split(/\./, $ip);
+                print "$ip[3]\.$ip[2]\.$ip[1]\tIN\tPTR\t$host\.sta.uni.lyn.zillow.com.\n";
+        }
+}
+
+------------------------
+
+###JAVA###
+
+***JDK Setup***
+Windows
+c:\java\source\directories
+c:\java\classes\compiled directories
+
+c:\jdk1.2.3\standard layout
+c:\jdk1.4.2\standard layout
+c:\jdk1.5.0\standard layout
+
+***UNIX***
+/opt/bea/
+/opt/jdk
+
+***/JDK Setup***
+
+***CLASSPATH Variable***
+set locally not globally
+
+***ANT****
+ant -v compile_property_services 
+ant build
+jar tvf jtds.jar | grep "Pooled"
+
+
+-- mysql class to bench NDB cluster
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.*;
+import java.text.*;
+
+public class NdbUpdate1 {
+
+        private final static int MAX_RECORD = 68000000;
+        private final static int NUM_ITER = 10000000;
+        private SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss.S");
+        private Date beginTime;
+        private Date endTime;
+        private long minTime = 0;
+        private long maxTime = 10;
+
+        private void begin(){
+                beginTime = new Date(System.currentTimeMillis());
+        }
+
+        private void end(){
+                endTime = new Date(System.currentTimeMillis());
+        }
+
+        private Connection getConnection() throws ClassNotFoundException,SQLException {
+                Connection conn = null;
+                Class.forName("com.mysql.jdbc.Driver");
+                conn = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/zillow?"
+                                + "user=root");
+                return conn;
+        }
+
+
+        private void updateLoop() throws ClassNotFoundException,SQLException{
+                Connection conn = null;
+                PreparedStatement u_pstmt = null;
+                PreparedStatement s_pstmt = null;
+                try{
+                        conn = getConnection();
+                        u_pstmt = conn.prepareStatement(
+                                        "update counter set hits0=hits0+1, sequence=sequence+1 where propertyid=?");
+                        s_pstmt = conn.prepareStatement(
+                                        "select hits0 from counter where propertyid=?");
+
+                        for (int i=0;i<NUM_ITER;i++){
+                                int rand = (int) (Math.random() * MAX_RECORD);
+                                u_pstmt.setInt(1, rand);
+                                s_pstmt.setInt(1, rand);
+
+                                long inner_bt = System.currentTimeMillis();
+                                u_pstmt.executeUpdate();
+                                s_pstmt.executeQuery();
+                                long inner_at = System.currentTimeMillis();
+                                long timeDiff = inner_at - inner_bt;
+                            if (timeDiff < minTime){
+                                minTime = timeDiff;
+                            }
+                            else if (timeDiff > maxTime){
+                                maxTime = timeDiff;
+                            }
+                        }
+                }finally{
+                        if(u_pstmt != null)u_pstmt.close();
+                        if(s_pstmt != null)s_pstmt.close();
+                        if(conn != null)conn.close();
+                }
+        }
+
+        private void printReport(){
+                System.out.println("Update time for " + NUM_ITER + " ");
+                System.out.println( df.format(beginTime) + " -- " + df.format(endTime)
+                                 + " = " + (endTime.getTime() - beginTime.getTime()) + "ms");
+                System.out.println("Max time = " + maxTime + "ms");
+                System.out.println("Min time = " + minTime + "ms");
+        }
+
+        public static void main(String args[]) throws ClassNotFoundException,SQLException{
+                NdbUpdate1 n = new NdbUpdate1();
+                n.begin();
+                n.updateLoop();
+                n.end();
+                n.printReport();
+        }
+
+}
+
+---------------------------
+--PreparedHammer.java
+
+package com.clearwateranalytics.pghammer;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.*;
+import java.util.*;
+
+public class PreparedHammer
+{
+	private final static int MAX_RECORD = 9998;
+	private final static int QUERY_TOTAL = 10;
+	private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss.S");
+	private Date beginTime;
+	private Date endTime;
+	private long minTime = 100;
+	private long maxTime = 0;
+
+	private void markStartTime()
+	{
+		beginTime = new Date(System.currentTimeMillis());
+	}
+
+	private void markEndTime()
+	{
+		endTime = new Date(System.currentTimeMillis());
+	}
+
+	private PreparedStatement createDatabaseConnection()
+	{
+		Connection conn = null;
+		PreparedStatement preparedStatement = null;
+		try
+		{
+			Class.forName("org.postgresql.Driver");
+			conn = DriverManager.getConnection("jdbc:postgresql://st-cw20-pgdb3:5432/rdba", "hammeruser", "hammer");
+			preparedStatement = conn.prepareStatement("select callbackdetail from hammer.callbackparams where jobid = ?;");
+			for (int i = 0; i < QUERY_TOTAL; i++)
+			{
+				launchHammer(preparedStatement);
+			}
+		}
+		catch (ClassNotFoundException cnfe)
+		{
+			cnfe.getException();
+			System.out.println("Can't find the PostgreSQL JDBC Driver ");
+		}
+		catch (SQLException se)
+		{
+			se.getErrorCode();
+			System.out.println("PreparedStatement creation failed");
+		}
+		return preparedStatement;
+	}
+
+	private void printReport()
+	{
+		System.out.println("Select time for " + QUERY_TOTAL + " iterations");
+		System.out.println(dateFormat.format(beginTime) + " -- " + dateFormat.format(endTime) + " = "
+						   + (endTime.getTime() - beginTime.getTime()) + "ms");
+		System.out.println("Max time = " + maxTime + "ms");
+		System.out.println("Min time = " + minTime + "ms");
+	}
+
+	private void launchHammer(PreparedStatement preparedStatement)
+	{
+		PreparedStatement hammerStatement = preparedStatement;
+		try
+		{
+			int rand = (int) (Math.random() * MAX_RECORD);
+			hammerStatement.setInt(1, rand);
+			long startTime = System.currentTimeMillis();
+			ResultSet resultSet = null;
+			resultSet = hammerStatement.executeQuery();
+			while (resultSet.next())
+			{
+				System.out.println(resultSet.getString(1));
+			}
+			long endTime = System.currentTimeMillis();
+			long timeDiff = endTime - startTime;
+			if (minTime > timeDiff)
+			{
+				minTime = timeDiff;
+			}
+			else if (maxTime < timeDiff)
+			{
+				maxTime = timeDiff;
+			}
+		} catch (SQLException se) {
+			se.getErrorCode();
+			System.out.println("LaunchHammer Failed!");
+		}
+		try {
+			if (hammerStatement != null ) { hammerStatement.close(); };
+		} catch (SQLException se) {
+			se.getErrorCode();
+			System.out.println("Close LaunchHammer connection failed!");
+		} 
+	}	
+		
+	public static void main(String args[])
+	{
+		PreparedHammer ph = new PreparedHammer();
+		ph.markStartTime();
+		PreparedStatement ps = ph.createDatabaseConnection();
+		ph.launchHammer(ps);
+		ph.markEndTime();
+		ph.printReport();
+	}
+}
+
+###/JAVA###
+
+***BASH***
+-- restore of ndb cluster
+
+#!/bin/sh
+
+bkp=BACKUP-${1} #:-`find_latest_ndb_backup.sh`}
+
+cd /var/lib/mysql-cluster/BACKUP/$bkp
+
+fullV=`ls *ctl | head -1 | cut -f2 -d-`
+backupno=$1
+metanodeid=`echo $fullV | cut -f2 -d.`
+
+ndb_restore -m --nodeid=$metanodeid --backupid=$backupno
+for f in BACKUP-$backupno-*.Data ; do
+  datanodeid=`echo $f | cut -f3 -d- | cut -f2 -d.`
+  ndb_restore -r --nodeid=$datanodeid --backupid=$backupno
+done
+
+-- backup of ndb cluster
+#!/bin/bash
+
+echo -n "Starting NDB backup ... "
+bkpno=`ndb_mgm -e 'start backup' | perl -nle 's/.*?Node\s*\d+:\s*Backup\s*(\d+).*/$1/ && print'`
+echo "done - $bkpno"
+./copy_backups.sh $bkpno
+
+-- copy backups from one box to another
+
+#!/bin/bash
+
+cd /var/lib/mysql-cluster
+bkp=BACKUP-$1
+rm -rf /var/lib/mysql-cluster/BACKUP/$bkp
+mkdir -p /var/lib/mysql-cluster/BACKUP/$bkp
+for db in 192.168.131.42 192.168.131.43 ; do
+  scp -r $db:/var/lib/mysql-cluster/BACKUP/$bkp/* /var/lib/mysql-cluster/BACKUP/$bkp
+done
+
+-- CREATE NDB SCHEMA
+
+use FOO;
+
+drop table if exists counter;
+create table counter (
+  propertyid int unsigned not null auto_increment,
+  `sequence` int unsigned not null default 0,
+  `hits0` int unsigned not null default 0,
+  `hits1` int unsigned not null default 0,
+  `last0` int unsigned not null default 0,
+  `last1` int unsigned not null default 0,
+  `current0` int unsigned not null default 0,
+  `current1` int unsigned not null default 0,
+  PRIMARY KEY  using hash (`propertyid`)
+) ENGINE=ndbcluster DEFAULT CHARSET=latin1;
+
+drop table if exists region;
+CREATE TABLE region (
+  regionid int unsigned NOT NULL default 0,
+  hits int unsigned not null default 0,
+  PRIMARY KEY using hash (regionid)
+) ENGINE=ndbcluster DEFAULT CHARSET=latin1;
+
+-- get rate for file growth over 60 seconds
+
+#!/bin/bash
+
+export mb_sum=0
+for x in `seq 1 6`
+do
+        export num_1=`ls -al /backup/warehouse-03/tMessageWarehouse.TMD | awk '{print $5}'`
+        sleep 10
+        export num_2=`ls -al /backup/warehouse-03/tMessageWarehouse.TMD | awk '{print $5}'`
+        export num_diff=`expr $num_2 - $num_1`
+        export mb_sec=`expr $num_diff / 10 / 1024 / 1024`
+        echo "Periodic Rate = " $mb_sec "MB per second"
+        export mb_sum=`expr $mb_sum + $mb_sec`
+done
+export mb_avg=`expr $mb_sum / 6`
+echo "Average Rate over 60 seconds = " $mb_avg "MB per second"
+
+--- delete rows from database in batches (david's script from wmp14)
+
+#!/bin/bash
+
+r=10200000
+incr=10000
+while [ $r -lt 18000000 ]; do
+  echo $r
+  times
+  mysql -uroot -p'm3ss@g1ng!' -e "delete from wmp15.tMessage where MessageId<$r;"
+
+  let r=r+$incr
+done
+times
+
+#EOF
+
+-- find orphaned processes from Greenplum
+
+#!/bin/bash
+
+create_list() {
+        CONN=`psql -Atc "select ' '  || array_to_string(array(select 'con' || sess_id from pg_stat_activity), ' | ') || ' ';" template1`
+
+        procs=`gpssh -f all_hosts_file /usr/ucb/ps axw | grep postgres | grep ' con' | egrep -v "($CONN)"|awk '{print $2}'`
+
+	# echo $CONN
+
+        echo $procs
+}
+
+LIST1=`create_list`
+echo $LIST1
+sleep 60
+LIST2=`create_list`
+echo $LIST2
+
+if [ "$LIST1" == "$LIST2" ] && [ x"$LIST1" != x"" ];then
+        echo "These processes must be killed: $LIST1"
+else
+        echo "No orphaned processes were found."
+fi
+
+-- kill idle db connections to greenplum / postgresql
+
+#!/bin/bash
+conn=0
+TIME=2700
+HELP=0
+################################################################################################
+# Objective  : To identify the CONNECTIONS  IDLE for more than 45 minutes
+
+# Summary    : This will identify the pid's and will issues a kill for then:
+# Logging    : All logs will be stored in $HOME/gpAdminLogs/gp_idle.log 
+# Consequences    : Connections killed will get the below error messages and they would need to reconnect 
+#            FATAL:  terminating connection due to administrator command
+#            server closed the connection unexpectedly
+#                This probably means the server terminated abnormally
+#                before or while processing the request.
+#            The connection to the server was lost. Attempting reset: Succeeded. 
+################################################################################################
+
+help() {
+echo '
+    -h    : Display help
+    -c    : kill idle connections
+    -t    : age of query and connection [default: 2700 seconds ]
+    idleconn.sh -c  -t 3000 [default: 2700 values in seconds]
+    idleconn.sh -c            [default: 2700 values in seconds]
+'
+}
+source $GPHOME/greenplum_path.sh
+
+
+loging (){
+# Logging all the connections which were idle for more than 2700s 
+psql -t -c "select * from pg_stat_activity where now()-backend_start > '${TIME}s'" template1 >> $HOME/gpAdminLogs/gp_idle.log
+}
+
+
+idle_conn () {
+# Generating pid's for connections opened for more then 45 minutes :
+
+psql -A -t -c "SELECT 'kill '||procpid from pg_stat_activity where now()-backend_start > '${TIME}s' or current_query ='<IDLE>' " template1 | bash
+ }
+
+if [ $# -ne 0 ];then
+        while getopts "ct:h" opts;do
+                case  "$opts" in
+
+        c)
+        conn=1
+        ;;
+        t)
+        TIME=$OPTARG;
+        ;;
+        h)
+        HELP=1
+        ;;
+        esac
+    done
+#else
+#help
+fi
+
+date >> $HOME/gpAdminLogs/gp_idle.log
+if [ $HELP -eq 1 ] || [ $conn -eq 0 ];then
+help
+fi
+
+
+if [ $conn -eq 1 ];then
+loging
+idle_conn
+fi
+date >> $HOME/gpAdminLogs/gp_idle.log
+
+-- kill session id to greenplum / postgresql
+
+#!/bin/bash
+#*****************************************************
+# SOURCE USER'S ENVIRONMENT VARIABLES
+if [ -f /home/gpadmin/.bash_profile ];then
+. /home/gpadmin/.bash_profile
+export LANG=en_US.UTF-8
+fi
+#*****************************************************
+# SETUP ENV
+#*****************************************************
+BASEDIR="/export/home/gpadmin/"
+BNAME="`basename $0 | cut -f1 -d\.`"
+TEA="/usr/bin/tee -a"
+ECHO="/usr/bin/echo"
+PSQL="/usr/local/greenplum-db/bin/psql"
+DATE="/bin/date"
+DATADIR=$BASEDIR/utilities
+DATABASE="-d hw_edw"
+PORT="-p 5432"
+LOGDIR=$BASEDIR/utilities/log
+LOGFILE=$LOGDIR/$BNAME.$$."`date '+%Y-%m-%d'`"
+$ECHO "*********************************************************************"| $TEA $LOGFILE
+$ECHO "********************SESSION KILLING SCRIPT***************************"| $TEA $LOGFILE
+$ECHO "**********************************************************************"| $TEA $LOGFILE
+while true
+do
+echo "Enter the process id that you want to Kill "
+read pid
+sid=`psql -At -c "select sess_id from pg_stat_activity where procpid=$pid;"`
+
+i=1
+while [ $i -le 10 ] 
+do
+m=`/usr/ucb/ps auxwww | grep $pid | grep -v "grep con$pid" | awk '{print $2}' | wc -l`
+s1=`ssh sdw1 /usr/ucb/ps auxwww | grep con$sid | grep -v "grep con$sid" | awk '{print $2}' | wc -l`
+s2=`ssh sdw2 /usr/ucb/ps auxwww | grep con$sid | grep -v "grep con$sid" | awk '{print $2}' | wc -l`
+if [ $s1 -gt 0 ] or [ $s2 -gt 0 ] or [ $m -gt 0 ]
+then
+/usr/ucb/ps auxwww | grep con$pid | grep -v "grep con$pid" | awk '{print $2}' | xargs kill 2>/dev/null
+ssh sdw1 /usr/ucb/ps auxwww | grep con$sid | grep -v "grep con$sid" | awk '{print $2}' | xargs ssh sdw1 kill 2>/dev/null
+ssh sdw2 /usr/ucb/ps auxwww | grep con$sid | grep -v "grep con$sid" | awk '{print $2}' | xargs ssh sdw2 kill 2>/dev/null
+if [ $i -eq 10 ]; then
+echo "The segment process are still not being killed please try running the script after sometime......"
+exit
+fi
+else
+echo "No process running on mdw or sdw1 or sdw2......"
+echo "script exiting....."
+sleep 5
+exit
+fi
+i=`expr $i + 1`
+done
+
+***/BASH***
+
+***Powershell***
+
+## GetWindowsVersion.ps1
+# Enter the filesystem location of your text file of server host names here (host names should be one per line)
+$server_list = "C:\powershell\scripts\Servers.txt";
+
+# Don't change anything below this line
+
+if (!(Test-Path -Path $server_list)) {
+	Write-Output "Servers.txt file does not exist";
+	exit;
+}
+else {
+	foreach ($i in Get-Content $server_list) {
+		if ($i.StartsWith("##")) {
+			Write-Output $i;
+			[Environment]::NewLine;
+		}	
+		else {
+			$ping_result = (Get-WmiObject Win32_PingStatus -Filter "Address = '$i'").StatusCode;
+			if ($ping_result = 1) {
+				$i +"`n"+ "================================"; 
+				Get-WmiObject Win32_OperatingSystem -computername $i | select Caption;
+				[Environment]::NewLine;
+			}
+			else { 
+				Write-Output "Server $i is not pingable"; 
+			}
+		}		
+	}
+}
+
+###
