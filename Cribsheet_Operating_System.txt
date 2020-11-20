@@ -1,4 +1,4 @@
-Version 10.19.20
+Version 11.20.20
 Started 09.23.04
 
 Last Version before changing fields Version 10.21.14
@@ -210,6 +210,12 @@ awk -F, '{print > $1}' file.csv			-- print out the
 --------------------
 
 sed -i -e "1d" file.txt		-- delete first line of file.txt
+
+--------------------
+***Cut Command***
+--------------------
+
+cut -d " " -f 2- kube_commands.txt > kube_commands.out              -- remove first field of file using white space as delimiter
 
 --------------------
 ***DNS***
