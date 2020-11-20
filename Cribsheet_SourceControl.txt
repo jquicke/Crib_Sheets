@@ -1,4 +1,4 @@
-Current Version 11.13.20
+Current Version 11.17.20
 Started Version 10.29.20
 
 ###Git###
@@ -6,6 +6,12 @@ Started Version 10.29.20
 git config --global alias.root 'rev-parse --show-toplevel'   -- create alias to get git root
 git rm --cached <file>             -- makes git stop tracking the file completely (leaving it in the filesystem, unlike plain git rm*)
 git reset HEAD <file>              -- unstages any modifications made to the file since the last commit (but doesn't revert them in the filesystem)
+
+***Clone Remote Repository***
+
+git clone https://github.com/alexchenuw/devopslabs             -- clones remote git repository to current directory
+
+***/Clone Remote Repository***
 
 ***Add or Update a File***
 
