@@ -1,0 +1,147 @@
+cd .ssh
+vi authorized_keys
+su -
+apt-get update all
+apt-get update
+apt-get update -y
+apt-get install git
+usermod -aG docker jquicke
+groups
+git clone https://github.com/cykod/AlienInvasion.git
+vi DockerFile
+docker build . -t myaliengame
+apt install docker.io
+docker build . -t myaliengame
+docker run -d -p 80:80 myaliengame
+docker push jquicke/jquicke:myaliengame
+docker inspect
+docker inspect f35646e83998
+docker tag
+docker tag a8e33d1a0c2c jquicke/jquicke:myaliengame
+apt-get update -y
+apt-get install docker-compose -y
+docker-compose -version
+git init
+ping github.com
+git clone https://github.com/cykod/AlientInvasion.git
+vi Dockerfile
+curl ifconfig.io
+curl localhost
+docker push jquicke/jquicke:myaliengame
+docker inspect
+docker ls
+docker image ls
+docker image --help
+apt-get update -y
+apt-get install docker-compose -y
+docker-compose -version
+vi docker-compose.yaml
+docker-compose up
+docker-compose up -d
+docker push jquicke/jquicke:myaliengame
+docker pull jquicke/jquicke
+git init
+git@github.com:jquicke/alieninvasion.git
+git remote add origin git@github.com:jquicke/alieninvasion.git
+git remote add origin jquicke@github.com:jquicke/alieninvasion.git
+git branch -M main
+cd AlienInvasion/
+git init
+git config --global user.name "<jquicke>"
+git remote add origin jquicke@github.com:jquicke/alieninvasion.git
+git branch -M main
+git remote add origin jquicke@github.com:jquicke/alieninvasion.git
+git branch -M main
+git add .
+git commit -m "adding AlienInvasion"
+git push origin master
+git remote add origin2 jquicke@github.com:jquicke/alieninvasion.git
+git add .
+git commit -m "adding AlienInvasion"
+git push origin2 master
+git remote add origin2 git@github.com:jquicke/alieninvasion.git
+git remote add origin3 git@github.com:jquicke/alieninvasion.git
+git remote remove origin
+git remote remove origin2
+git remote add origin git@github.com:jquicke/alieninvasion.git
+git branch -M main
+git push -u origin main
+git remote add origin2 git@github.com:jquicke/alieninvasion.git
+git push -u origin2 main
+git branch -M main
+git push -u origin2 main
+vimtutor
+ifconfig -a
+kubectl top
+vi pod_with_2containers_volume.yaml
+kubectl create -f pod_with_2containers_emptydir.yaml
+kubectl create -f ./pod_with_2containers_emptydir.yaml
+kubectl create -f ./pod_with_2containers_volume.yaml
+kubectl get pod/podwithvolumes -o wide
+kubectl exec -it podwithvolume -c busyboxcontainer sh
+kubectl exec -it podwithvolumes -c busyboxcontainer sh
+kubectl exec -it podwithvolumes -c redis sh
+vi player_configmap.yaml
+kubectl create -f player_configmap.yaml
+kubectl get configmaps
+kubectl describe configmaps mygamedata
+vi player_configmap_pod.yaml
+kubectl create -f player_configmap_pod.yaml
+kubectl get pod/configmap-game -o wide
+kubectl exec -it configmap-game sh
+kubectl create secret generic mycredential --from-literal=username=uwUberDevOp --from-literal=password=abc123
+kubectl get secrets mycredential
+kubectl describe secrets mycredential
+vi pod_usesecret_vol.yaml
+kubectl create -f pod_usesecret_vol.yaml
+kubectl get pod podwithsecretvolume -o wide
+kubectl describe pod podwithsecretvolume
+kubectl exec -it podwithsecretvolume sh
+vi lab_init_container.yaml
+kubectl create -f lab_init_container.yaml
+kubectl describe pod init-demo
+kubectl expose pod/init-demo --type=NodePort --port=80 --target-port=80
+vi liveness_container.yaml
+kubectl create -f liveness_container.yaml
+kubectl describe pod liveness-exec
+kubectl get pod liveness-exec
+kubectl expose pod/init-demo --type=NodePort --port=80 --target-port=80
+curl ipinfo.io
+kubectl get svc
+curl http://nodeip:31645
+curl http://34.94.179.14:31645/
+curl http://34.94.179.14:30872
+curl http://34.94.179.14:32205
+curl 34.94.179.14
+curl 34.94.179.14:30872
+curl 34.94.179.14:32205
+vi lab19_deployment.yaml
+kubectl create -f lab19_deployment.yaml
+kubectl get deployment jquickewebdemo
+kubectl get deployment
+kubectl describe replicaset jquickewebdemo
+kubectl get pod -l app=nginxwebpod
+kubectl delete pod -l app=nginxwebpod
+vi lab19_service.yaml
+kubectl get svc lab19external
+vi lab19_combined.yaml
+kubectl delete -f lab19_service.yaml
+kubectl delete -f lab19_deployment.yaml
+kubectl create -f lab19_combined.yaml
+kubectl get deployment
+kubectl get svc lab19external
+kubectl scale deployment mywebdemoconfig --replicas=5
+kubectl scale deployment lab19_combined.yaml --replicas=5
+kube get deployment
+kubectl get deployment
+kubectl scale deployment achenwebdemo --replicas=5
+kubectl delete -f lab19_combined.yaml
+vi lab19_combined.yaml
+kubectl create -f lab19_combined.yaml
+kubectl scale deployment jquickewebdemo --replicas=5
+kubectl get deployment
+kubectl scale deployment jquickewebdemo --replicas=10
+kubectl scale deployment jquickewebdemo --replicas=2
+kubectl get --all-namespaces
+kubectl get pods --all-namespaces
+kubectl get svc lab19external
