@@ -1,0 +1,109 @@
+Current Version 11.20.20
+Started Version 11.13.20
+
+--------------------
+***Docker***
+--------------------
+Docker Commands
+
+apt-get update -y
+apt-get install docker.io -y
+usermod -aG docker <your_user_name>
+mkdir /home/<your_user_name>/docker
+apt-get install docker-compose -y
+curl ifconfig.io
+
+docker version
+docker ps -a
+docker image ls
+docker inspect <container_id>
+docker run --name <container_name> -d -p 5688:80 nginx
+docker run --help
+docker cp ./<file_name> <container_name>:/usr/share/nginx/html/<file_name>
+docker exec -it <container_name> bash
+docker tag <image-id> /<container_path>/<container_name>:<application> (example: docker tag f35646e83998 jquicke/jquicke:mynginx)
+docker commit
+docker login
+docker push /<container_path>/<container_name>:<application>  (example: docker push jquicke/jquicke:mynginx)
+docker-compose up -d
+docker run --name secondcontainer -d -p 5699:80 nginx
+docker run --name <container_name> -d -p 5699:80 nginx
+docker run --help
+echo "This is container one web server" > /home/jquicke/dockerindex1.html
+echo "This is container two web server" > /home/jquicke/dockerindex2.html
+docker cp ./index1.html firstcontainer:/usr/share/nginx/html/index.html
+docker cp ./index2.html secondcontainer:/usr/share/nginx/html/index.html
+docker ps -a
+docker image ls
+docker inspect <container_id>
+docker inspect ea3169cd62b0
+docker image ls
+docker image --help
+docker ps -a
+docker inspect a68f938e9a35
+docker exec -it a68f938e9a35 bash
+docker ps -a
+docker exec -it ea3169cd62b0 bash
+docker exec -it ea3169cd62b0 bash
+docker tag image-id
+docker commit
+docker image ls
+docker tag f35646e83998 jquicke/jquicke:mynginx
+docker image ls
+docker login
+docker push jquicke/jquicke:mynginx
+docker image ls
+docker-compose up -d
+docker push jquicke/jquicke:tagname
+docker tag local-image:tagname new-repo:tagname
+docker push new-repo:tagname
+docker push jquicke/jquicke:tagname
+git clone https://github.com/cykod/AlientInvasion.git
+vi Dockerfile
+curl ifconfig.io
+man curl
+curl ifconfig.io
+history |grep docker
+docker push jquicke/jquicke:myaliengame
+docker inspect
+docker ls
+docker image --help
+apt-get install docker-compose -y
+docker-compose -version
+vi docker-compose.yaml
+cat docker-compose.yaml
+docker ps stop $(docker ps -a -q)
+
+
+echo "# alieninvasion" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git branch -M main
+git remote add origin git@github.com:jquicke/alieninvasion.git
+git push -u origin main
+                
+…or push an existing repository from the command line
+git remote add origin git@github.com:jquicke/alieninvasion.git
+git branch -M main
+git push -u origin main
+
+docker ps stop $(docker ps -a -q)
+
+--------------------
+***/Docker***
+--------------------
+
+--------------------
+***Kubernetes***
+--------------------
+create persistent volume for homework
+Persistent Volume = PV
+
+
+kubectl get pods --all-namespaces
+kubectl get svc -n jquicke
+
+--------------------
+***/Kubernetes***
+--------------------
